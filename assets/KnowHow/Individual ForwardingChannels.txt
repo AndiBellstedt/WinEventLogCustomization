@@ -1,0 +1,10 @@
+#individual Log files for WEC
+https://blogs.technet.microsoft.com/russellt/2016/05/18/creating-custom-windows-event-forwarding-logs/
+
+#framework for handeling WEC in detail
+https://blogs.technet.microsoft.com/russellt/2017/05/09/project-sauron-introduction/
+https://github.com/russelltomkins/Project-Sauron/releases/tag/1.3
+
+
+#Setup WEC
+https://blogs.technet.microsoft.com/jepayne/2015/11/23/monitoring-what-matters-windows-event-forwarding-for-everyone-even-if-you-already-have-a-siem/

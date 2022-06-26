@@ -1,0 +1,11 @@
+﻿TOPIC
+	about_WinEventLogCustomization
+	
+SHORT DESCRIPTION
+	Explains how to use the WinEventLogCustomization powershell module
+	
+LONG DESCRIPTION
+	<Insert Content here>
+
+KEYWORDS
+	WinEventLogCustomization

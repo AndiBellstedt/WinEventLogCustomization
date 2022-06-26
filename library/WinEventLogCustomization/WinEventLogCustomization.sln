@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{013EC81F-1B81-4197-B923-5E9DFC728788}") = "WinEventLogCustomization", "WinEventLogCustomization\WinEventLogCustomization.csproj", "{5022D159-8ABB-4822-8442-688474E2045A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5022D159-8ABB-4822-8442-688474E2045A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5022D159-8ABB-4822-8442-688474E2045A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5022D159-8ABB-4822-8442-688474E2045A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5022D159-8ABB-4822-8442-688474E2045A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A4C1DA39-A0D2-405A-9D66-1A46C1E5A930}
+	EndGlobalSection
+EndGlobal

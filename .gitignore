@@ -1,0 +1,22 @@
+﻿
+# ignore the settings folder and files for VSCode and PSS
+.vscode/*
+*.psproj
+*TempPoint*
+
+# Ignore staging info from Visual Studio
+library/WinEventLogCustomization/.vs/*
+library/WinEventLogCustomization/WinEventLogCustomization/bin/*
+library/WinEventLogCustomization/WinEventLogCustomization/obj/*
+
+# ignore PowerShell Studio MetaData
+WinEventLogCustomization/WinEventLogCustomization.psproj
+WinEventLogCustomization/WinEventLogCustomization.psproj.bak
+WinEventLogCustomization/WinEventLogCustomization.psprojs
+WinEventLogCustomization/WinEventLogCustomization.psproj
+
+# ignore the TestResults
+TestResults/*
+
+# ignore the publishing Directory
+publish/*
