@@ -13,25 +13,24 @@ function New-WELCEventChannelManifest {
     .PARAMETER InputObject
         The input csv file for creating the xml manifest and the dll
 
-
     .PARAMETER DestinationPath
         Output path for xml manifest file (.man file) and the dll-file for the eventlog viewer
 
     .NOTES
         Author: Andreas Bellstedt
 
-        adopted from Russell Tomkins "Project Sauron"
-        Author: Russell Tomkins
-        Github: https://www.github.com/russelltomkins/ProjectSauron
+        Adopted from Russell Tomkins "Project Sauron"
+            Author: Russell Tomkins
+            Github: https://www.github.com/russelltomkins/ProjectSauron
 
-        Originbal description:
-        ---------------------
-        Name: Create-Manifest.ps1
-        Version: 1.1
-        Author: Russell Tomkins - Microsoft Premier Field Engineer
-        Blog: https://aka.ms/russellt
-        Refer to this blog series for more details
-        http://blogs.technet.microsoft.com/russellt/2017/03/23/project-sauron-part-1
+            Originbal description:
+            ---------------------
+            Name: Create-Manifest.ps1
+            Version: 1.1
+            Author: Russell Tomkins - Microsoft Premier Field Engineer
+            Blog: https://aka.ms/russellt
+            Refer to this blog series for more details
+            http://blogs.technet.microsoft.com/russellt/2017/03/23/project-sauron-part-1
 
 
     .LINK
@@ -49,11 +48,17 @@ function New-WELCEventChannelManifest {
     .EXAMPLE
         PS C:\> Import-WELCChannelDefinition -Path CustomEventLogChannel.xlsx | New-WELCEventChannelManifest
 
-        Creates the Manfifest file to compile
+        Creates the Manfifest file and compile dll file(s) from the content of 'CustomEventLogChannel.xlsx'
 
     .EXAMPLE
-        Creates the Manfifest file to compile along with where the DLL will be located on the WEC server
-        Initialize-CustomEventChannel.ps1 -InputFile DCEvents.csv -DestinationPath "C:\CustomDLLPath" -CompilationToolPath "C:\Administration\Tools\EventChannelManifestGenerator"
+        PS C:\> New-WELCEventChannelManifest -ChannelFullName "ChannelFolder/ChannelName"
+
+        Creates a manifest (ChannelFolder.man) and compile a dll file (ChannelFolder.dll) with a single EventLogChannel "ChannelName" and a folder "ChannelFolder"
+
+    .EXAMPLE
+        PS C:\> "MyFolder/MyChannel1", "MyFolder/MyChannel2", "MyFolder/MyChannel3", "MyFolder/MyChannel4" | New-WELCEventChannelManifest
+
+        Creates a manifest (MyChannel.man) and compile a dll file (MyChannel.dll) with 4 EventLogChannels MyChannel1-4 in the folder "MyFolder"
     #>
     [CmdletBinding(
         SupportsShouldProcess = $true,
@@ -182,7 +187,7 @@ function New-WELCEventChannelManifest {
             "ManualFullChannelName" {
                 $channelDefinitions += foreach ($_channelFullName in $ChannelFullName) {
                     # Validate the parameters - if SecondLevel is specified, ThirdLevel has to be present also
-                    if ($_channelFullName -match '(^\w*-\w*-\w*\/\w*$)|(^\w*\/\w*$)') {
+                    if ($_channelFullName -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ChannelName)) {
                         $_channelName = $_channelFullName
                     } else {
                         Write-Error "Invalid format on ChannelFullName '$($_channelFullName)'. Valid format for ChannelFullName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel/ChannelName' or 'FolderRoot/ChannelName'"
@@ -192,7 +197,7 @@ function New-WELCEventChannelManifest {
                     if (-not $ChannelSymbol) {
                         $_channelSymbol = [String]::Join("_", $_channelFullName.Split("-").Split("/").ToUpper())
                     } else {
-                        if ($ChannelSymbol -match '(^\w*_\w*_\w*_\w*$)|(^\w*_\w*$)') {
+                        if ($ChannelSymbol -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ChannelSymbol)) {
                             $_channelSymbol = $ChannelSymbol.ToUpper()
                         } else {
                             Write-Error "Invalid format on ChannelSymbol '$($ChannelSymbol)'. Valid format for ChannelSymbol must be somthing like 'FolderRoot_FolderSecondLevel_FolderThirdLevel_ChannelName' or 'FolderRoot_ChannelName'"
@@ -203,7 +208,7 @@ function New-WELCEventChannelManifest {
                     if (-not $ProviderName) {
                         $_providerName = $_channelFullName.Replace( "/$($_channelFullName.Split("/")[-1])", "")
                     } else {
-                        if ($ProviderName -match '(^\w*-\w*-\w*$)|(^\w*$)') {
+                        if ($ProviderName -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ProviderName)) {
                             $_providerName = $ProviderName
                         } else {
                             Write-Error "Invalid format on ProviderName '$($ProviderName)'. Valid format for ProviderName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'"
@@ -214,7 +219,7 @@ function New-WELCEventChannelManifest {
                     if (-not $ProviderSymbol) {
                         $_providerSymbol = [String]::Join("_", ($_channelFullName.Replace( "/$($_channelFullName.Split("/")[-1])", "")).Split("-").ToUpper())
                     } else {
-                        if ($ProviderSymbol -match '(^\w*-\w*-\w*\/\w*$)|(^\w*\/\w*$)') {
+                        if ($ProviderSymbol -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ProviderSymbol)) {
                             $_providerSymbol = $ProviderSymbol.ToUpper()
                         } else {
                             Write-Error "Invalid format on ProviderSymbol '$($ProviderSymbol)'. Valid Format for ProviderSymbol must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'"
