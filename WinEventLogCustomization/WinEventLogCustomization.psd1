@@ -52,7 +52,9 @@
     FunctionsToExport = @(
         'Import-WELCChannelDefinition',
         'New-WELCEventChannelManifest',
-        'Register-WELCEventChannelManifest'
+        'Register-WELCEventChannelManifest',
+        'Move-WELCEventChannelManifest',
+        'Test-WELCEventChannelManifest'
     )
 
     # Cmdlets to export from this module
