@@ -87,8 +87,9 @@
                 $files = $pathItem | Resolve-Path | Get-ChildItem | Select-Object -ExpandProperty FullName
             } elseif (Test-Path -Path $pathItem -PathType Container) {
                 Write-Verbose "Getting files in path '$($pathItem)'"
-                $files = Get-ChildItem -Path $pathItem -File -Include ".man" | Select-Object -ExpandProperty FullName
-                Write-Verbose "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path "
+                $files = Get-ChildItem -Path $pathItem -File -Filter "*.man" | Select-Object -ExpandProperty FullName
+                Write-Verbose "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path"
+                if(-not $files) {Write-Warning "No manifest files found in path '$($pathItem)'"}
             } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
                 Write-Error "'$pathItem' is not a valid path or file."
                 continue
@@ -149,14 +150,14 @@
                     break
                 }
 
-                if ($pscmdlet.ShouldProcess("'$($DestinationPath)' in file '$($file)'", "Set")) {
+                if ($pscmdlet.ShouldProcess("file '$($file)' with directory '$($DestinationPath)'", "Set")) {
                     $xmlfile.Save($file)
                 }
                 if(-not $Prepare) {
                     if ($pscmdlet.ShouldProcess("File manifest '$($file)' to '$($DestinationPath)'", "Move")) {
                         $destfiles += Move-Item -Path $file -Destination $DestinationPath -Force -PassThru
                     }
-                    if ($pscmdlet.ShouldProcess("File dll file '$($resourceFileName)' to '$($DestinationPath)'", "Move")) {
+                    if ($pscmdlet.ShouldProcess("Dll file '$($resourceFileName)' to '$($DestinationPath)'", "Move")) {
                         $destfiles += Move-Item -Path $resourceFileName -Destination $DestinationPath -Force -PassThru
                     }
                     if($messageFileName -notlike $resourceFileName) {
