@@ -143,25 +143,25 @@
                         if (Test-Path -Path $provider.resourceFileName -PathType Leaf) {
                             Write-PSFMessage -Level Debug -Message "Ressource file '$($provider.resourceFileName)' for provider '$($provider.name)' GUID:$($provider.guid) is valid"
                         } else {
-                            Write-PSFMessage -Level Verbose -Message "Failed testing ressource file '$provider.resourceFileName' for provider '$($provider.name)' GUID:$($provider.guid)"
+                            Write-PSFMessage -Level Verbose -Message "Failed testing ressource file '$($provider.resourceFileName)' for provider '$($provider.name)' GUID:$($provider.guid)"
                             $isOK = $false
                         }
                     }
 
                     if ($pscmdlet.ParameterSetName -like "General" -or "MessageFileName" -in $Property) {
                         if (Test-Path -Path $provider.messageFileName -PathType Leaf) {
-                            Write-PSFMessage -Level Debug -Message "Message file '$provider.messageFileName' for provider '$($provider.name)' GUID:$($provider.guid) is valid"
+                            Write-PSFMessage -Level Debug -Message "Message file '$($provider.messageFileName)' for provider '$($provider.name)' GUID:$($provider.guid) is valid"
                         } else {
-                            Write-PSFMessage -Level Verbose -Message "Failed testing message file '$provider.messageFileName' for provider '$($provider.name)' GUID:$($provider.guid)"
+                            Write-PSFMessage -Level Verbose -Message "Failed testing message file '$($provider.messageFileName)' for provider '$($provider.name)' GUID:$($provider.guid)"
                             $isOK = $false
                         }
                     }
 
                     if ($pscmdlet.ParameterSetName -like "General" -or "ParameterFileName" -in $Property) {
                         if (Test-Path -Path $provider.parameterFileName -PathType Leaf) {
-                            Write-PSFMessage -Level Debug -Message "Parameter file '$provider.parameterFileName' for provider '$($provider.name)' GUID:$($provider.guid) is valid"
+                            Write-PSFMessage -Level Debug -Message "Parameter file '$($provider.parameterFileName)' for provider '$($provider.name)' GUID:$($provider.guid) is valid"
                         } else {
-                            Write-PSFMessage -Level Verbose -Message "Failed testing parameter file '$provider.parameterFileName' for provider '$($provider.name)' GUID:$($provider.guid)"
+                            Write-PSFMessage -Level Verbose -Message "Failed testing parameter file '$($provider.parameterFileName)' for provider '$($provider.name)' GUID:$($provider.guid)"
                             $isOK = $false
                         }
                     }
