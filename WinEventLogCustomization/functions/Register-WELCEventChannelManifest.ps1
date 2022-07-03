@@ -26,6 +26,12 @@
     .PARAMETER Credential
         The credentials to use on remote calls
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .NOTES
         Author: Andreas Bellstedt
 
@@ -63,8 +69,7 @@
 
         Assuming $PSSession variable is created something like this:
         $PSSession = New-PSSession -ComputerName SRV01
-
-#>
+    #>
     [CmdletBinding(
         SupportsShouldProcess = $true,
         PositionalBinding = $true,
@@ -125,7 +130,7 @@
 
         #region Processing Events
         foreach ($pathItem in $Path) {
-            # File and folder validity tests
+            # File and folder validation
             if (Test-Path -Path $pathItem -PathType Leaf) {
                 Write-PSFMessage -Level Verbose -Message "Found file '$($pathItem)' as a valid file in path" -Target $env:COMPUTERNAME
                 $files = $pathItem | Resolve-Path | Get-ChildItem | Select-Object -ExpandProperty FullName
@@ -157,46 +162,52 @@
                             $tempPath = Resolve-Path $tempPath -ErrorAction Stop | Select-Object -ExpandProperty Path
                         }
                     }
+                    Write-PSFMessage -Level Verbose -Message "Prepare '$($file)' for destination '$($DestinationPath)'"
 
                     $tempFile = Move-WELCEventChannelManifest -Path $file -DestinationPath $tempPath -CopyMode -PassThru -ErrorAction Stop | Select-Object -ExpandProperty FullName
 
                     $file = Move-WELCEventChannelManifest -Path $tempFile -DestinationPath $DestinationPath -Prepare -PassThru | Select-Object -ExpandProperty FullName
                 }
 
+                Write-PSFMessage -Level Verbose -Message "Opening XML manifest file '$($file)' to gather DLL information"
                 $xmlfile = New-Object XML
                 $xmlfile.Load($file)
 
                 $dllFiles = @()
+
+                Write-PSFMessage -Level Debug -Message "Gather path of resourceFileName DLL"
                 $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
-                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                     $dllFiles += $dllFile
                 } else {
                     $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName -Leaf)"
-                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                    if (Test-Path -Path $dllFile -PathType Leaf) {
                         $dllFiles += $dllFile
                     } else {
                         Stop-PSFFunction -Message "Unexpected behavior while locating ressource dll file"
                     }
                 }
 
+                Write-PSFMessage -Level Debug -Message "Gather path of messageFileName DLL"
                 $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
-                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                     $dllFiles += $dllFile
                 } else {
                     $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName -Leaf)"
-                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                    if (Test-Path -Path $dllFile -PathType Leaf) {
                         $dllFiles += $dllFile
                     } else {
                         Stop-PSFFunction -Message "Unexpected behavior while locating message dll file"
                     }
                 }
 
+                Write-PSFMessage -Level Debug -Message "Gather path of parameterFileName DLL"
                 $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
-                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                     $dllFiles += $dllFile
                 } else {
                     $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName -Leaf)"
-                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                    if (Test-Path -Path $dllFile -PathType Leaf) {
                         $dllFiles += $dllFile
                     } else {
                         Stop-PSFFunction -Message "Unexpected behavior while locating parameter dll file"
@@ -204,14 +215,19 @@
                 }
 
                 $dllFiles = $dllFiles | Sort-Object -Unique
+                Write-PSFMessage -Level Verbose -Message "Found $($dllFiles.count) dll: $([string]::Join(", ", $dllFiles))"
 
 
                 # Process computers
                 foreach ($computer in $ComputerName) {
+                    Write-PSFMessage -Level Verbose -Message "Processing file '$($file)' on computer '$($computer)'"
 
                     # When remoting is used, transfer files first
                     if (($PSCmdlet.ParameterSetName -eq "Session") -or (-not $computer.IsLocalhost)) {
+                        Write-PSFMessage -Level Verbose -Message "Going to transfer file into destination '$($DestinationPath)' on remote computer"
+
                         if ($pscmdlet.ShouldProcess("Manifest '$($file)' and dll to computer '$($computer)'", "Transfer")) {
+
                             # Create PS remoting session
                             if ($PSCmdlet.ParameterSetName -ne "Session") {
                                 $paramSession = @{
@@ -219,6 +235,7 @@
                                     "ErrorAction"  = "Stop"
                                 }
                                 if ($Credential) { $paramSession.Add("Credential", $Credential) }
+
                                 try {
                                     $Session = New-PSSession @paramSession
                                 } catch {
@@ -232,12 +249,14 @@
                             Copy-Item -ToSession $Session -Destination $DestinationPath -Force -Path $dllFiles
                         }
                     } elseif ((split-path $file) -notlike $DestinationPath) {
+                        Write-PSFMessage -Level Verbose -Message "Going to copy file into destination '$($DestinationPath)'"
                         Copy-Item -Destination $DestinationPath -Force -Path $file
                         Copy-Item -Destination $DestinationPath -Force -Path $dllFiles
                     }
 
                     # Register manifest
-                    if ($pscmdlet.ShouldProcess("Manifest '$($Path)' on computer '$($computer)'", "Register")) {
+                    if ($pscmdlet.ShouldProcess("Manifest '$($file)' on computer '$($computer)'", "Register")) {
+
                         $destFileName = "$($DestinationPath)\$(split-path $file -Leaf)"
                         $paramInvokeCmd = [ordered]@{
                             "ComputerName" = $computer.ToString()
@@ -264,15 +283,14 @@
                     }
                 }
 
-                if($tempPath) {
+                if ($tempPath) {
+                    Write-PSFMessage -Level Debug -Message "Cleaning up temporary directory '$($tempPath)'"
                     Remove-Item -Path $tempPath -Recurse -Force -Confirm:$false -WhatIf:$false -Verbose:$false -Debug:$false -ErrorAction:Ignore
                 }
             }
         }
-
     }
 
     end {
-
     }
 }
