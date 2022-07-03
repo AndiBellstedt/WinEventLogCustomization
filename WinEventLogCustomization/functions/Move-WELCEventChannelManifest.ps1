@@ -22,6 +22,9 @@
     .PARAMETER Prepare
         The rewrite of the manifest will be done, but the files will not be moved
 
+    .PARAMETER CopyMode
+        Copy the files from the source to the destination, instead of moving them
+
     .PARAMETER PassThru
         The moved files will be parsed to the pipeline for further processing.
 
@@ -70,6 +73,9 @@
         $Prepare,
 
         [switch]
+        $CopyMode,
+
+        [switch]
         $PassThru
     )
 
@@ -89,7 +95,7 @@
                 Write-Verbose "Getting files in path '$($pathItem)'"
                 $files = Get-ChildItem -Path $pathItem -File -Filter "*.man" | Select-Object -ExpandProperty FullName
                 Write-Verbose "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path"
-                if(-not $files) {Write-Warning "No manifest files found in path '$($pathItem)'"}
+                if (-not $files) { Write-Warning "No manifest files found in path '$($pathItem)'" }
             } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
                 Write-Error "'$pathItem' is not a valid path or file."
                 continue
@@ -98,52 +104,87 @@
                 continue
             }
 
-            $destfiles = @()
             foreach ($file in $files) {
                 # open XML file
                 $xmlfile = New-Object XML
                 $xmlfile.Load($file)
 
-                if ($xmlfile.instrumentationManifest.win -eq "http://manifests.microsoft.com/win/2004/08/windows/events") {
+                if (
+                    $xmlfile.instrumentationManifest.schemaLocation -eq "http://schemas.microsoft.com/win/2004/08/events eventman.xsd" -and
+                    $xmlfile.instrumentationManifest.xmlns -eq "http://schemas.microsoft.com/win/2004/08/events" -and
+                    $xmlfile.instrumentationManifest.win -eq "http://manifests.microsoft.com/win/2004/08/windows/events" -and
+                    $xmlfile.instrumentationManifest.xsi -eq "http://www.w3.org/2001/XMLSchema-instance" -and
+                    $xmlfile.instrumentationManifest.xs -eq "http://www.w3.org/2001/XMLSchema" -and
+                    $xmlfile.instrumentationManifest.trace -eq "http://schemas.microsoft.com/win/2004/08/events/trace"
+                ) {
                     # Gather files and rewrite XML
+                    $manifestFolder = Split-Path -Parent $file
 
-                    $resourceFileName = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
-                    if(Test-Path -Path $resourceFileName -PathType Leaf) {
-                        if($DestinationPath -like (Split-Path -Path $resourceFileName)) {
-                            Write-Warning "Source and destination path of ressource file '$resourceFileName' are the same. Nothing to do"
-                        } else {
-                            $destResourceFileName = "$($DestinationPath)\$(Split-Path -Path $resourceFileName -Leaf)"
-                            $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName = $destResourceFileName
-                        }
+                    $resourceFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
+                    $resourceFileNamePath = Split-Path -Path $resourceFileNameFullName
+                    $resourceFileNameFile = Split-Path -Path $resourceFileNameFullName -Leaf
+                    if ($DestinationPath -like $resourceFileNamePath) {
+                        Write-PSFMessage -Level Significant -Message "Source and destination path of ressource file '$resourceFileNameFullName' are the same. Nothing to do"
                     } else {
-                        Write-Error "Ressource file '$resourceFileName' not found"
-                        break
+                        $destResourceFileName = "$($DestinationPath)\$($resourceFileNameFile)"
+                        $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName = $destResourceFileName
+
+                        if (Test-Path -Path $destResourceFileName -PathType Leaf) {
+                            # DLL is already present in destination directory
+                            $resourceFileNameFullName = $destResourceFileName
+                        } elseif (Test-Path -Path "$($manifestFolder)\$($resourceFileNameFile)" -PathType Leaf) {
+                            # DLL path in XML is wrong, but DLL is next to manifest file
+                            $resourceFileNameFullName = "$($manifestFolder)\$($resourceFileNameFile)"
+                        } elseif (Test-Path -Path $resourceFileNameFullName -PathType Leaf) {
+                            # nothing to do, DLL is in path from xml file, but has to be mnoved somewhere different
+                        } else {
+                            Stop-PSFFunction -Message "Ressource file '$($resourceFileNameFile)' not found. Searched in folders: '$($resourceFileNamePath)', '$($manifestFolder)', '$($DestinationPath)'" -EnableException $true
+                        }
                     }
 
-                    $messageFileName = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
-                    if(Test-Path -Path $messageFileName -PathType Leaf) {
-                        if($DestinationPath -like (Split-Path -Path $messageFileName)) {
-                            Write-Warning "Source and destination path of message file '$messageFileName' are the same. Nothing to do"
-                        } else {
-                            $destMessageFileName = "$($DestinationPath)\$(Split-Path -Path $messageFileName -Leaf)"
-                            $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName = $destMessageFileName
-                        }
+                    $messageFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
+                    $messageFileNamePath = Split-Path -Path $messageFileNameFullName
+                    $messageFileNameFile = Split-Path -Path $messageFileNameFullName -Leaf
+                    if ($DestinationPath -like $messageFileNamePath) {
+                        Write-Warning "Source and destination path of message file '$messageFileNameFullName' are the same. Nothing to do"
                     } else {
-                        Write-Error "Message file '$messageFileName' not found"
-                        break
+                        $destMessageFileName = "$($DestinationPath)\$($messageFileNameFile)"
+                        $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName = $destMessageFileName
+
+                        if (Test-Path -Path $destMessageFileName -PathType Leaf) {
+                            # DLL is already present in destination directory
+                            $messageFileNameFullName = $destMessageFileName
+                        } elseif (Test-Path -Path "$($manifestFolder)\$($messageFileNameFile)" -PathType Leaf) {
+                            # DLL path in XML is wrong, but DLL is next to manifest file
+                            $messageFileNameFullName = "$($manifestFolder)\$($messageFileNameFile)"
+                        } elseif (Test-Path -Path $messageFileNameFullName -PathType Leaf) {
+                            # nothing to do, DLL is in path from xml file, but has to be mnoved somewhere different
+                        } else {
+                            Stop-PSFFunction -Message "Message file '$($messageFileNameFile)' not found. Searched in folders: '$($messageFileNamePath)', '$($manifestFolder)', '$($DestinationPath)'" -EnableException $true
+                        }
                     }
 
-                    $parameterFileName = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
-                    if(Test-Path -Path $parameterFileName -PathType Leaf) {
-                        if($DestinationPath -like (Split-Path -Path $parameterFileName)) {
-                            Write-Warning "Source and destination path of parameter file '$parameterFileName' are the same. Nothing to do"
-                        } else {
-                            $destParameterFileName = "$($DestinationPath)\$(Split-Path -Path $parameterFileName -Leaf)"
-                            $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName = $destParameterFileName
-                        }
+                    $parameterFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
+                    $parameterFileNamePath = Split-Path -Path $parameterFileNameFullName
+                    $parameterFileNameFile = Split-Path -Path $parameterFileNameFullName -Leaf
+                    if ($DestinationPath -like $parameterFileNamePath) {
+                        Write-Warning "Source and destination path of parameter file '$parameterFileNameFullName' are the same. Nothing to do"
                     } else {
-                        Write-Error "Parameter file '$parameterFileName' not found"
-                        break
+                        $destParameterFileName = "$($DestinationPath)\$($parameterFileNameFile)"
+                        $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName = $destParameterFileName
+
+                        if (Test-Path -Path $destParameterFileName -PathType Leaf) {
+                            # DLL is already present in destination directory
+                            $parameterFileNameFullName = $destParameterFileName
+                        } elseif (Test-Path -Path "$($manifestFolder)\$($parameterFileNameFile)" -PathType Leaf) {
+                            # DLL path in XML is wrong, but DLL is next to manifest file
+                            $parameterFileNameFullName = "$($manifestFolder)\$($parameterFileNameFile)"
+                        } elseif (Test-Path -Path $parameterFileNameFullName -PathType Leaf) {
+                            # nothing to do, DLL is in path from xml file, but has to be mnoved somewhere different
+                        } else {
+                            Stop-PSFFunction -Message "Parameter file '$($parameterFileNameFile)' not found. Searched in folders: '$($parameterFileNamePath)', '$($manifestFolder)', '$($DestinationPath)'" -EnableException $true
+                        }
+
                     }
                 } else {
                     Write-Error "$($file) is not a actual manifest file"
@@ -153,28 +194,47 @@
                 if ($pscmdlet.ShouldProcess("file '$($file)' with directory '$($DestinationPath)'", "Set")) {
                     $xmlfile.Save($file)
                 }
-                if(-not $Prepare) {
-                    if ($pscmdlet.ShouldProcess("File manifest '$($file)' to '$($DestinationPath)'", "Move")) {
-                        $destfiles += Move-Item -Path $file -Destination $DestinationPath -Force -PassThru
-                    }
-                    if ($pscmdlet.ShouldProcess("Dll file '$($resourceFileName)' to '$($DestinationPath)'", "Move")) {
-                        $destfiles += Move-Item -Path $resourceFileName -Destination $DestinationPath -Force -PassThru
-                    }
-                    if($messageFileName -notlike $resourceFileName) {
-                        if ($pscmdlet.ShouldProcess("File message dll file '$($messageFileName)' to '$($DestinationPath)'", "Move")) {
-                            $destfiles += Move-Item -Path $messageFileName -Destination $DestinationPath -Force -PassThru
+                if (-not $Prepare -or $CopyMode) {
+                    if ($pscmdlet.ShouldProcess("File manifest '$($file)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
+                        if ($CopyMode) {
+                            $destfile = Copy-Item -Path $file -Destination $DestinationPath -Force -PassThru
+                        } else {
+                            $destfile = Move-Item -Path $file -Destination $DestinationPath -Force -PassThru
                         }
                     }
-                    if($parameterFileName -notlike $resourceFileName) {
-                        if ($pscmdlet.ShouldProcess("File parameter dll file '$($parameterFileName)' to '$($DestinationPath)'", "Move")) {
-                            $destfiles += Move-Item -Path $parameterFileName -Destination $DestinationPath -Force -PassThru
+                    if ($pscmdlet.ShouldProcess("Dll file '$($resourceFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
+                        if ($CopyMode) {
+                            Copy-Item -Path $resourceFileNameFullName -Destination $DestinationPath -Force
+                        } else {
+                            Move-Item -Path $resourceFileNameFullName -Destination $DestinationPath -Force
+                        }
+                    }
+                    if ($messageFileNameFullName -notlike $resourceFileNameFullName) {
+                        if ($pscmdlet.ShouldProcess("File message dll file '$($messageFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
+                            if ($CopyMode) {
+                                Copy-Item -Path $messageFileNameFullName -Destination $DestinationPath -Force
+                            } else {
+                                Move-Item -Path $messageFileNameFullName -Destination $DestinationPath -Force
+
+                            }
+                        }
+                    }
+                    if ($parameterFileNameFullName -notlike $resourceFileNameFullName) {
+                        if ($pscmdlet.ShouldProcess("File parameter dll file '$($parameterFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
+                            if ($CopyMode) {
+                                Copy-Item -Path $parameterFileNameFullName -Destination $DestinationPath -Force
+                            } else {
+                                Move-Item -Path $parameterFileNameFullName -Destination $DestinationPath -Force
+                            }
                         }
                     }
 
-                    if($PassThru) {
-                        $destfiles | Get-Item
-                    }
+                    if ($PassThru) { $destfile }
+                } else {
+                    if ($PassThru) { $file | Get-Item }
                 }
+
+                #$xmlfile
             }
         }
     }
