@@ -58,7 +58,7 @@
         SupportsShouldProcess = $true,
         PositionalBinding = $true,
         ConfirmImpact = 'Medium',
-        DefaultParameterSetName = 'Local'
+        DefaultParameterSetName = 'ComputerName'
     )]
     param (
         [Parameter(
@@ -80,9 +80,11 @@
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 
-        [Parameter(
-            ParameterSetName = "ComputerName"
-        )]
+        [Parameter(ParameterSetName = "Session")]
+        [System.Management.Automation.Runspaces.PSSession[]]
+        $Session,
+
+        [Parameter(ParameterSetName = "ComputerName")]
         [PSCredential]
         $Credential,
 
@@ -91,34 +93,174 @@
     )
 
     begin {
+        # If session parameter is used -> transfer it to ComputerName,
+        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block
+        if ($Session) { $ComputerName = $Session.ComputerName }
+        $DestinationPath = $DestinationPath.TrimEnd("\")
 
+        $pathBound = Test-PSFParameterBinding -ParameterName Path
+        $computerBound = Test-PSFParameterBinding -ParameterName ComputerName
     }
 
     process {
-        # Checking
-        if (-not $DestinationPath) { $DestinationPath = $Path }
+        # Prereqs
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
-        Write-Warning "Not supportet yet"
-        break
+        #region parameterset workarround
+        # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
+        if (-not ($pathBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
+            if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Path = "" }
+        }
+        #endregion parameterset workarround
 
-        #  man + dll
-        [XML]$xml
-        $XMLfile = New-Object XML
-        $XMLfile = $XMLFile.Load($path)
-        $XMLFile.property.otherproperty = ”Gibberish”
-        $XMLFile.Save($path)
+        #region Processing Events
+        foreach ($pathItem in $Path) {
+            # File and folder validity tests
+            if (Test-Path -Path $pathItem -PathType Leaf) {
+                Write-PSFMessage -Level Verbose -Message "Found file '$($pathItem)' as a valid file in path" -Target $env:COMPUTERNAME
+                $files = $pathItem | Resolve-Path | Get-ChildItem | Select-Object -ExpandProperty FullName
+            } elseif (Test-Path -Path $pathItem -PathType Container) {
+                Write-PSFMessage -Level Verbose -Message "Getting files in path '$($pathItem)'" -Target $env:COMPUTERNAME
+                $files = Get-ChildItem -Path $pathItem -File -Filter "*.man" | Select-Object -ExpandProperty FullName
+                Write-PSFMessage -Level Verbose -Message "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path" -Target $env:COMPUTERNAME
+                if (-not $files) { Write-Warning "No manifest files found in path '$($pathItem)'" }
+            } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
+                Write-PSFMessage -Level Error -Message"'$pathItem' is not a valid path or file." -Target $env:COMPUTERNAME
+                continue
+            } else {
+                Write-PSFMessage -Level Error -Message "unable to open '$($pathItem)'" -Target $env:COMPUTERNAME
+                continue
+            }
+
+            foreach ($file in $files) {
+                if (-not $DestinationPath) { $DestinationPath = Split-Path -Path $file }
+
+                # Check for dll paths in manifest / prepare dll paths in manifest for different destination path
+                if (
+                    (-not (Test-WELCEventChannelManifest -Path $file -OnlyDLLPath)) -or
+                    ((split-path $file) -notlike $DestinationPath)
+                ) {
+                    [String]$tempPath = "$($env:TEMP)\WELC_$([guid]::NewGuid().guid)"
+                    if (Test-Path -Path $tempPath -IsValid) {
+                        if (-not (Test-Path -Path $tempPath -PathType Container)) {
+                            New-Item -Path $tempPath -ItemType Directory -Force | Out-Null
+                            $tempPath = Resolve-Path $tempPath -ErrorAction Stop | Select-Object -ExpandProperty Path
+                        }
+                    }
+
+                    $tempFile = Move-WELCEventChannelManifest -Path $file -DestinationPath $tempPath -CopyMode -PassThru -ErrorAction Stop | Select-Object -ExpandProperty FullName
+
+                    $file = Move-WELCEventChannelManifest -Path $tempFile -DestinationPath $DestinationPath -Prepare -PassThru | Select-Object -ExpandProperty FullName
+                }
+
+                $xmlfile = New-Object XML
+                $xmlfile.Load($file)
+
+                $dllFiles = @()
+                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
+                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                    $dllFiles += $dllFile
+                } else {
+                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName -Leaf)"
+                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                        $dllFiles += $dllFile
+                    } else {
+                        Stop-PSFFunction -Message "Unexpected behavior while locating ressource dll file"
+                    }
+                }
+
+                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
+                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                    $dllFiles += $dllFile
+                } else {
+                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName -Leaf)"
+                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                        $dllFiles += $dllFile
+                    } else {
+                        Stop-PSFFunction -Message "Unexpected behavior while locating message dll file"
+                    }
+                }
+
+                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
+                if((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
+                    $dllFiles += $dllFile
+                } else {
+                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName -Leaf)"
+                    if(Test-Path -Path $dllFile -PathType Leaf) {
+                        $dllFiles += $dllFile
+                    } else {
+                        Stop-PSFFunction -Message "Unexpected behavior while locating parameter dll file"
+                    }
+                }
+
+                $dllFiles = $dllFiles | Sort-Object -Unique
 
 
-        #remoting
+                # Process computers
+                foreach ($computer in $ComputerName) {
 
-        # registration
-        Write-Verbose "Starting to register custom event log from file '$($Path)'"
-        Start-Process `
-            -FilePath "$($env:windir)\system32\wevtutil.exe" `
-            -ArgumentList "install-manifest $($Path)" `
-            -WorkingDirectory $TempPath `
-            -Wait `
-            -NoNewWindow
+                    # When remoting is used, transfer files first
+                    if (($PSCmdlet.ParameterSetName -eq "Session") -or (-not $computer.IsLocalhost)) {
+                        if ($pscmdlet.ShouldProcess("Manifest '$($file)' and dll to computer '$($computer)'", "Transfer")) {
+                            # Create PS remoting session
+                            if ($PSCmdlet.ParameterSetName -ne "Session") {
+                                $paramSession = @{
+                                    "ComputerName" = $computer.ToString()
+                                    "ErrorAction"  = "Stop"
+                                }
+                                if ($Credential) { $paramSession.Add("Credential", $Credential) }
+                                try {
+                                    $Session = New-PSSession @paramSession
+                                } catch {
+                                    Write-PSFMessage -Level Error -Message "Error creating remoting session to computer '$($computer)'" -Target $computer -ErrorRecord $_
+                                    break
+                                }
+                            }
+
+                            # Transfer files
+                            Copy-Item -ToSession $Session -Destination $DestinationPath -Force -Path $file
+                            Copy-Item -ToSession $Session -Destination $DestinationPath -Force -Path $dllFiles
+                        }
+                    } elseif ((split-path $file) -notlike $DestinationPath) {
+                        Copy-Item -Destination $DestinationPath -Force -Path $file
+                        Copy-Item -Destination $DestinationPath -Force -Path $dllFiles
+                    }
+
+                    # Register manifest
+                    if ($pscmdlet.ShouldProcess("Manifest '$($Path)' on computer '$($computer)'", "Register")) {
+                        $destFileName = "$($DestinationPath)\$(split-path $file -Leaf)"
+                        $paramInvokeCmd = [ordered]@{
+                            "ComputerName" = $computer.ToString()
+                            "ErrorAction"  = "Stop"
+                            ErrorVariable  = "ErrorReturn"
+                            "ArgumentList" = $destFileName
+                        }
+                        if ($PSCmdlet.ParameterSetName -eq "Session") { $paramInvokeCmd['ComputerName'] = $Session }
+                        if ($Credential) { $paramInvokeCmd.Add("Credential", $Credential) }
+
+                        Write-PSFMessage -Level Verbose -Message "Registering manifest '$($destFileName)' on computer '$($computer)'" -Target $computer
+                        try {
+                            $null = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock {
+                                try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
+                                $output = . "$($env:windir)\system32\wevtutil.exe" "install-manifest" "$($args[0])" *>&1
+                                $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wevtutil.exe' } *>&1
+                                if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
+                            }
+                            if ($ErrorReturn) { Write-Error "Error registering manifest" -ErrorAction Stop }
+                        } catch {
+                            Stop-PSFFunction -Message "Unable to register manifest '$($destFileName)' on computer '$($computer)'" -Target $computer -ErrorRecord $_
+                        }
+
+                    }
+                }
+
+                if($tempPath) {
+                    Remove-Item -Path $tempPath -Recurse -Force -Confirm:$false -WhatIf:$false -Verbose:$false -Debug:$false -ErrorAction:Ignore
+                }
+            }
+        }
+
     }
 
     end {
