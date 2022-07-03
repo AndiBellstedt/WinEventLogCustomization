@@ -13,6 +13,9 @@
     .PARAMETER ComputerName
         The computer where to register the manifest file
 
+    .PARAMETER Session
+        PowerShell Session object where to register the manifest file
+
     .PARAMETER DestinationPath
         The path where to store the manifest and DLL file
 
@@ -53,7 +56,15 @@
 
         The manifest and DLL file will be registered from the the local path "C:\CustomDLLPath" on "SRV01" and has to remain there.
 
-    #>
+    .EXAMPLE
+        PS C:\> Register-WELCEventChannelManifest -Path C:\CustomDLLPath\MyChannel.man -Sesion $PSSession
+
+        Register the manfifest-file to Windows EventLog System on all connections within the $PSSession variable
+
+        Assuming $PSSession variable is created something like this:
+        $PSSession = New-PSSession -ComputerName SRV01
+
+#>
     [CmdletBinding(
         SupportsShouldProcess = $true,
         PositionalBinding = $true,
@@ -68,7 +79,7 @@
         )]
         [ValidateNotNullOrEmpty()]
         [Alias("File", "FileName", "FullName")]
-        [String]
+        [String[]]
         $Path,
 
         [Parameter(
@@ -103,11 +114,9 @@
     }
 
     process {
-        # Prereqs
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
+        #region parameterset workarround
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
-        #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
         if (-not ($pathBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
             if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Path = "" }
