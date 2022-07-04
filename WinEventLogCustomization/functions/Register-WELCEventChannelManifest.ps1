@@ -138,9 +138,9 @@
                 Write-PSFMessage -Level Verbose -Message "Getting files in path '$($pathItem)'" -Target $env:COMPUTERNAME
                 $files = Get-ChildItem -Path $pathItem -File -Filter "*.man" | Select-Object -ExpandProperty FullName
                 Write-PSFMessage -Level Verbose -Message "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path" -Target $env:COMPUTERNAME
-                if (-not $files) { Write-Warning "No manifest files found in path '$($pathItem)'" }
+                if (-not $files) { Write-PSFMessage -Level Warning -Message  "No manifest files found in path '$($pathItem)'" -Target $env:COMPUTERNAME }
             } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
-                Write-PSFMessage -Level Error -Message"'$pathItem' is not a valid path or file." -Target $env:COMPUTERNAME
+                Write-PSFMessage -Level Error -Message "'$pathItem' is not a valid path or file." -Target $env:COMPUTERNAME
                 continue
             } else {
                 Write-PSFMessage -Level Error -Message "unable to open '$($pathItem)'" -Target $env:COMPUTERNAME

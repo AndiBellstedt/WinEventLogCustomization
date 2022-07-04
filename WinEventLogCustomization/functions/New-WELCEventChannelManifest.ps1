@@ -135,14 +135,18 @@ function New-WELCEventChannelManifest {
 
     Begin {
         #region Constants
+        Write-PSFMessage -Level Debug -Message "Setting constants."
         # Path to csc.exe in windows
         [String]$WindowsCSCPath = "$($env:windir)\Microsoft.NET\Framework64\v4.0.30319"
+        Write-PSFMessage -Level Debug -Message ".NET Framework in '$($WindowsCSCPath)'"
 
         # Compilation tools from the windows SDK. The required executables are "mc.exe", "rc.exe" and "rcdll.dll". There is another tool "ecmangen.exe" (EventChannel ManifestGenerator) which is usefull to check and maintain the manifest files.
         [String]$CompilationToolPath = "$($MyInvocation.MyCommand.Module.ModuleBase)\bin"
+        Write-PSFMessage -Level Debug -Message "Binary CompilationTool is in '$($CompilationToolPath)'"
 
         # Path where the output files, and some other temp files from the compilation process are stored.
         [String]$TempPath = "$($env:TEMP)\WELC_$([guid]::NewGuid().guid)"
+        Write-PSFMessage -Level Debug -Message "Operating in temporary path '$($TempPath)'"
         #endregion Constants
 
 
@@ -160,6 +164,7 @@ function New-WELCEventChannelManifest {
         if ($TempPath.EndsWith('\')) { $TempPath = $TempPath.TrimEnd('\') }
         if (Test-Path -Path $TempPath -IsValid) {
             if (-not (Test-Path -Path $TempPath -PathType Container)) {
+                Write-PSFMessage -Level Debug -Message "Creating temporary directory '$($TempPath)'"
                 New-Item -Path $TempPath -ItemType Directory -Force | Out-Null
                 $TempPath = Resolve-Path $TempPath -ErrorAction Stop | Select-Object -ExpandProperty Path
             }
@@ -173,10 +178,12 @@ function New-WELCEventChannelManifest {
         Test-Path -Path "$($CompilationToolPath)\mc.exe" -ErrorAction Stop | Out-Null
         Test-Path -Path "$($CompilationToolPath)\rc.exe" -ErrorAction Stop | Out-Null
         Test-Path -Path "$($CompilationToolPath)\rcdll.dll" -ErrorAction Stop | Out-Null
+        Write-PSFMessage -Level Debug -Message "Binary tools found in CompilationTool path '$($CompilationToolPath)'"
         #endregion Validity checks
     }
 
     Process {
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         switch ($pscmdlet.ParameterSetName) {
             "InputObject" {
                 $channelDefinitions += foreach ($item in $InputObject) {
@@ -187,48 +194,49 @@ function New-WELCEventChannelManifest {
             "ManualFullChannelName" {
                 $channelDefinitions += foreach ($_channelFullName in $ChannelFullName) {
                     # Validate the parameters - if SecondLevel is specified, ThirdLevel has to be present also
+                    Write-PSFMessage -Level Debug -Message "Validating ChannelFullName '$($_channelFullName)'"
                     if ($_channelFullName -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ChannelName)) {
                         $_channelName = $_channelFullName
                     } else {
-                        Write-Error "Invalid format on ChannelFullName '$($_channelFullName)'. Valid format for ChannelFullName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel/ChannelName' or 'FolderRoot/ChannelName'"
-                        break
+                        Stop-PSFFunction -Message "Invalid format on ChannelFullName '$($_channelFullName)'. Valid format for ChannelFullName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel/ChannelName' or 'FolderRoot/ChannelName'" -EnableException $true
                     }
 
                     if (-not $ChannelSymbol) {
                         $_channelSymbol = [String]::Join("_", $_channelFullName.Split("-").Split("/").ToUpper())
+                        Write-PSFMessage -Level Debug -Message "ChannelSymbol not specified. Derive value '$($_channelSymbol)' from ChannelFullName"
                     } else {
                         if ($ChannelSymbol -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ChannelSymbol)) {
                             $_channelSymbol = $ChannelSymbol.ToUpper()
                         } else {
-                            Write-Error "Invalid format on ChannelSymbol '$($ChannelSymbol)'. Valid format for ChannelSymbol must be somthing like 'FolderRoot_FolderSecondLevel_FolderThirdLevel_ChannelName' or 'FolderRoot_ChannelName'"
-                            break
+                            Stop-PSFFunction -Message "Invalid format on ChannelSymbol '$($ChannelSymbol)'. Valid format for ChannelSymbol must be somthing like 'FolderRoot_FolderSecondLevel_FolderThirdLevel_ChannelName' or 'FolderRoot_ChannelName'" -EnableException $true
                         }
                     }
 
                     if (-not $ProviderName) {
                         $_providerName = $_channelFullName.Replace( "/$($_channelFullName.Split("/")[-1])", "")
+                        Write-PSFMessage -Level Debug -Message "ProviderName not specified. Derive value '$($_providerName)' from ChannelFullName"
                     } else {
                         if ($ProviderName -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ProviderName)) {
                             $_providerName = $ProviderName
                         } else {
-                            Write-Error "Invalid format on ProviderName '$($ProviderName)'. Valid format for ProviderName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'"
-                            break
+                            Stop-PSFFunction -Message "Invalid format on ProviderName '$($ProviderName)'. Valid format for ProviderName must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'" -EnableException $true
                         }
                     }
 
                     if (-not $ProviderSymbol) {
                         $_providerSymbol = [String]::Join("_", ($_channelFullName.Replace( "/$($_channelFullName.Split("/")[-1])", "")).Split("-").ToUpper())
+                        Write-PSFMessage -Level Debug -Message "ChannelSymbol not specified. Derive value '$($_providerSymbol)' from ChannelFullName"
                     } else {
                         if ($ProviderSymbol -match (Get-PSFConfigValue -FullName WinEventLogCustomization.MatchString.ProviderSymbol)) {
                             $_providerSymbol = $ProviderSymbol.ToUpper()
                         } else {
-                            Write-Error "Invalid format on ProviderSymbol '$($ProviderSymbol)'. Valid Format for ProviderSymbol must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'"
-                            break
+                            Stop-PSFFunction -Message "Invalid format on ProviderSymbol '$($ProviderSymbol)'. Valid Format for ProviderSymbol must be somthing like 'FolderRoot-FolderSecondLevel-FolderThirdLevel' or 'FolderRoot'" -EnableException $true
                         }
 
                     }
 
                     # Create custom "WEC.ChannelDefinition" object
+                    Write-PSFMessage -Level Verbose -Message "Create ChannelDefinition object from '$($_channelFullName)'"
                     [PSCustomObject]@{
                         ProviderSymbol = $_providerSymbol
                         ProviderName   = $_providerName
@@ -237,20 +245,21 @@ function New-WELCEventChannelManifest {
                     }
 
                     # Cleanup the mess of variables
-                    Remove-Variable _channelSymbol, _channelName, _providerSymbol, _providerName -Force -ErrorAction Ignore -Confirm:$false -WhatIf:$false -Debug:$false
+                    Write-PSFMessage -Level Debug -Message "Cleanup variables"
+                    Remove-Variable _channelSymbol, _channelName, _providerSymbol, _providerName -Force -ErrorAction Ignore -WarningAction Ignore -Verbose:$false -Confirm:$false -WhatIf:$false -Debug:$false
                 }
             }
 
             "ManualDefinition" {
                 # Validate the parameters - if SecondLevel is specified, ThirdLevel has to be present also
                 if ($FolderSecondLevel -and ($null -eq $FolderThirdLevel)) {
-                    Write-Warning "Parameter 'FolderSecondLevel' was specified, but 'FolderThirdLevel' is missing."
-                    Write-Warning "By design, only 'FolderRoot' or all the FolderPaths has to be specified."
-                    Write-Warning "Aborting creation."
-                    break
+                    Write-PSFMessage -Level Warning -Message "Parameter 'FolderSecondLevel' was specified, but 'FolderThirdLevel' is missing."
+                    Write-PSFMessage -Level Warning -Message "By design, only 'FolderRoot' or all the FolderPaths has to be specified."
+                    Stop-PSFFunction -Message "Aborting creation."
                 }
 
-                # Build variables for custom WEC.ChannelDefinition object
+                # Build variables for custom ChannelDefinition object
+                Write-PSFMessage -Level Debug -Message "Arranging data for ChannelDefinition object"
                 [Array]$_folderNames = $FolderRoot, $FolderSecondLevel, $FolderThirdLevel | ForEach-Object { if ($_) { $_ } }
                 [Array]$_providerSymbols = $FolderRoot.toupper(), $FolderSecondLevel.toupper(), $FolderThirdLevel.toupper() | ForEach-Object { if ($_) { $_ } }
                 [Array]$_channelSymbols = $_providerSymbols + $ChannelName.toupper()
@@ -261,6 +270,7 @@ function New-WELCEventChannelManifest {
                 $_channelSymbol = [String]::Join("_", $_channelSymbols)
 
                 # Create custom "WEC.ChannelDefinition" object
+                Write-PSFMessage -Level Verbose -Message "Create ChannelDefinition object for '$($_channelName)'"
                 $channelDefinitions = [PSCustomObject]@{
                     ProviderSymbol = $_providerSymbol
                     ProviderName   = $_providerName
@@ -269,6 +279,7 @@ function New-WELCEventChannelManifest {
                 }
 
                 # Cleanup the mess of variables
+                Write-PSFMessage -Level Debug -Message "Cleanup variables"
                 Remove-Variable _channelSymbol, _channelName, _providerSymbol, _providerName, _channelSymbols, _providerSymbols, _folderNames -Force -ErrorAction Ignore -Confirm:$false -WhatIf:$false -Debug:$false
             }
 
@@ -279,7 +290,7 @@ function New-WELCEventChannelManifest {
     }
 
     End {
-        Write-Verbose "Collected $($channelDefinitions.Count) channel definitions."
+        Write-PSFMessage -Level Verbose -Message "Collected $($channelDefinitions.Count) channel definition$(if($channelDefinitions.Count -gt 1){"s"})"
 
         $baseNames = $channelDefinitions | Select-Object -ExpandProperty ProviderName | Foreach-Object { $_.split("-")[0] } | Sort-Object -Unique
         foreach ($baseName in $baseNames) {
@@ -315,7 +326,7 @@ function New-WELCEventChannelManifest {
             $providers = $channelSelection | Select-Object -Property ProviderSymbol, ProviderName -Unique | Foreach-Object { $_ | Select-Object *, @{n = "ProviderGuid"; e = { ([guid]::NewGuid()).Guid } } }
 
             #region Create the manifest XML document
-            Write-Verbose "Working on group '$($baseName)' with $(([array]$channelSelection).Count) channel definitions in $(([array]$providers).count) folders"
+            Write-PSFMessage -Level Verbose -Message "Working on group '$($baseName)' with $(([array]$channelSelection).Count) channel definitions in $(([array]$providers).count) folders"
 
             #region Basic XML object definition
             # Create the manifest XML document
@@ -392,12 +403,12 @@ function New-WELCEventChannelManifest {
             $xmlWriter.Close()
             #endregion Basic XML object definition
 
-            Write-Verbose "Manifest file '$($fileNameManifest)' has been generated ($( [math]::Round( ((Get-ChildItem -Path $fullNameManifestTemp).length / 1KB),1))KB)"
+            Write-PSFMessage -Level Verbose -Message "Manifest file '$($fileNameManifest)' has been generated ($( [math]::Round( ((Get-ChildItem -Path $fullNameManifestTemp).length / 1KB),1))KB)"
             #endregion Create The Manifest XML Document
 
 
             #region Compile the manifest to DLL
-            Write-Verbose "Starting the compilation process on '$($fileNameDLL)'"
+            Write-PSFMessage -Level Verbose -Message "Starting the compilation process on '$($fileNameDLL)'"
             $tempFilesExisting = @()
             $finalFilesExisting = @()
             $finalFilesExpected = @($fullNameManifestTemp, $fullNameDLLTemp)
@@ -415,7 +426,7 @@ function New-WELCEventChannelManifest {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
                 } else {
-                    Write-Error -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -ErrorAction Stop
+                    Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
             #endregion generates "**.h", "**.rc" and "**TEMP.BIN" file from xml manifest
@@ -433,7 +444,7 @@ function New-WELCEventChannelManifest {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
                 } else {
-                    Write-Error -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -ErrorAction Stop
+                    Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
             #endregion generates "**.cs" file from xml manifest
@@ -451,7 +462,7 @@ function New-WELCEventChannelManifest {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
                 } else {
-                    Write-Error -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -ErrorAction Stop
+                    Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
             #endregion generates "**.res" file from xml manifest
@@ -467,23 +478,23 @@ function New-WELCEventChannelManifest {
                 if (Test-Path -Path $FinalFile -NewerThan (Get-Date).AddSeconds(-15)) {
                     $finalFilesExisting += Get-ChildItem $FinalFile -ErrorAction Stop
                 } else {
-                    Write-Error -Message "Expected temp file '$($FinalFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -ErrorAction Stop
+                    Stop-PSFFunction -Message "Expected temp file '$($FinalFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
 
             if ($pscmdlet.ShouldProcess("'$($fileNameManifest)' and '$($fileNameDLL)' in '$($DestinationPath)'", "Create")) {
-                Write-Verbose "Writing final $($finalFilesExisting.Count) files to '$($DestinationPath)'"
+                Write-PSFMessage -Level Verbose -Message "Writing final $($finalFilesExisting.Count) files to '$($DestinationPath)'"
                 $finalFilesExisting | Copy-Item -Destination $DestinationPath -Force -ErrorAction Stop
             }
             #endregion final compilation of the dll file
 
-            Write-Verbose "Finished process group '$($baseName)'"
+            Write-PSFMessage -Level Verbose -Message "Finished process group '$($baseName)'"
             #endregion Compile the manifest to DLL
         }
 
 
         #region Cleanup
-        Write-Verbose "Cleaning up temporary path '$($TempPath)'"
+        Write-PSFMessage -Level Verbose -Message "Cleaning up temporary path '$($TempPath)'"
         Remove-Item -Path $TempPath -Force -Recurse -ErrorAction SilentlyContinue
         #endregion Cleanup
     }

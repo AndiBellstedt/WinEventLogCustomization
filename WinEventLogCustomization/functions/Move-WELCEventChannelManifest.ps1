@@ -89,23 +89,25 @@
         foreach ($pathItem in $Path) {
             # File and folder validity tests
             if (Test-Path -Path $pathItem -PathType Leaf) {
-                Write-Verbose "Found file '$($pathItem)' as a valid file in path"
+                Write-PSFMessage -Level Verbose -Message "Found file '$($pathItem)' as a valid file in path" -Target $env:COMPUTERNAME
                 $files = $pathItem | Resolve-Path | Get-ChildItem | Select-Object -ExpandProperty FullName
             } elseif (Test-Path -Path $pathItem -PathType Container) {
-                Write-Verbose "Getting files in path '$($pathItem)'"
+                Write-PSFMessage -Level Verbose -Message "Getting files in path '$($pathItem)'" -Target $env:COMPUTERNAME
                 $files = Get-ChildItem -Path $pathItem -File -Filter "*.man" | Select-Object -ExpandProperty FullName
-                Write-Verbose "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path"
-                if (-not $files) { Write-Warning "No manifest files found in path '$($pathItem)'" }
+                Write-PSFMessage -Level Verbose -Message "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path" -Target $env:COMPUTERNAME
+                if (-not $files) { Write-PSFMessage -Level Warning -Message "No manifest files found in path '$($pathItem)'" -Target $env:COMPUTERNAME }
             } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
-                Write-Error "'$pathItem' is not a valid path or file."
+                Write-PSFMessage -Level Error -Message "'$pathItem' is not a valid path or file." -Target $env:COMPUTERNAME
                 continue
             } else {
-                Write-Error "unable to open '$($pathItem)'"
+                Write-PSFMessage -Level Error -Message "unable to open '$($pathItem)'" -Target $env:COMPUTERNAME
                 continue
             }
 
             foreach ($file in $files) {
+
                 # open XML file
+                Write-PSFMessage -Level Verbose -Message "Opening XML manifest file '$($file)' to gather DLL information"
                 $xmlfile = New-Object XML
                 $xmlfile.Load($file)
 
@@ -120,6 +122,7 @@
                     # Gather files and rewrite XML
                     $manifestFolder = Split-Path -Parent $file
 
+                    Write-PSFMessage -Level Debug -Message "Gather path of resourceFileName DLL"
                     $resourceFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
                     $resourceFileNamePath = Split-Path -Path $resourceFileNameFullName
                     $resourceFileNameFile = Split-Path -Path $resourceFileNameFullName -Leaf
@@ -128,6 +131,7 @@
                     } else {
                         $destResourceFileName = "$($DestinationPath)\$($resourceFileNameFile)"
                         $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName = $destResourceFileName
+                        Write-PSFMessage -Level Verbose -Message "Rewrite path of messageFileName DLL from '$($resourceFileNameFullName)' to '$($destResourceFileName)'"
 
                         if (Test-Path -Path $destResourceFileName -PathType Leaf) {
                             # DLL is already present in destination directory
@@ -142,14 +146,16 @@
                         }
                     }
 
+                    Write-PSFMessage -Level Debug -Message "Gather path of messageFileName DLL"
                     $messageFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
                     $messageFileNamePath = Split-Path -Path $messageFileNameFullName
                     $messageFileNameFile = Split-Path -Path $messageFileNameFullName -Leaf
                     if ($DestinationPath -like $messageFileNamePath) {
-                        Write-Warning "Source and destination path of message file '$messageFileNameFullName' are the same. Nothing to do"
+                        Write-PSFMessage -Level Verbose -Message "Source and destination path of message file '$($messageFileNameFullName)' are the same. Nothing to do"
                     } else {
                         $destMessageFileName = "$($DestinationPath)\$($messageFileNameFile)"
                         $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName = $destMessageFileName
+                        Write-PSFMessage -Level Verbose -Message "Rewrite path of messageFileName DLL from '$($messageFileNameFullName)' to '$($destMessageFileName)'"
 
                         if (Test-Path -Path $destMessageFileName -PathType Leaf) {
                             # DLL is already present in destination directory
@@ -164,14 +170,16 @@
                         }
                     }
 
+                    Write-PSFMessage -Level Debug -Message "Gather path of parameterFileName DLL"
                     $parameterFileNameFullName = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
                     $parameterFileNamePath = Split-Path -Path $parameterFileNameFullName
                     $parameterFileNameFile = Split-Path -Path $parameterFileNameFullName -Leaf
                     if ($DestinationPath -like $parameterFileNamePath) {
-                        Write-Warning "Source and destination path of parameter file '$parameterFileNameFullName' are the same. Nothing to do"
+                        Write-PSFMessage -Level Verbose -Message "Source and destination path of parameter file '$($parameterFileNameFullName)' are the same. Nothing to do"
                     } else {
                         $destParameterFileName = "$($DestinationPath)\$($parameterFileNameFile)"
                         $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName = $destParameterFileName
+                        Write-PSFMessage -Level Verbose -Message "Rewrite path of parameterFileName DLL from '$($parameterFileNameFullName)' to '$($destParameterFileName)'"
 
                         if (Test-Path -Path $destParameterFileName -PathType Leaf) {
                             # DLL is already present in destination directory
@@ -184,62 +192,78 @@
                         } else {
                             Stop-PSFFunction -Message "Parameter file '$($parameterFileNameFile)' not found. Searched in folders: '$($parameterFileNamePath)', '$($manifestFolder)', '$($DestinationPath)'" -EnableException $true
                         }
-
                     }
                 } else {
-                    Write-Error "$($file) is not a actual manifest file"
-                    break
+                    Stop-PSFFunction -Message "$($file) is not a actual manifest file" -EnableException $true
                 }
 
                 if ($pscmdlet.ShouldProcess("file '$($file)' with directory '$($DestinationPath)'", "Set")) {
                     $xmlfile.Save($file)
+                    Write-PSFMessage -Level Verbose -Message "Save file '$($file)' in directory '$($DestinationPath)'"
                 }
+
                 if (-not $Prepare -or $CopyMode) {
+                    Write-PSFMessage -Level Verbose -Message "Copy/Move manifest and DLL files into directory '$($DestinationPath)'"
+
                     if ($pscmdlet.ShouldProcess("File manifest '$($file)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
                         if ($CopyMode) {
+                            Write-PSFMessage -Level Debug -Message "Copy manifest file"
                             $destfile = Copy-Item -Path $file -Destination $DestinationPath -Force -PassThru
                         } else {
+                            Write-PSFMessage -Level Debug -Message "Move manifest file"
                             $destfile = Move-Item -Path $file -Destination $DestinationPath -Force -PassThru
                         }
                     }
+
                     if ($pscmdlet.ShouldProcess("Dll file '$($resourceFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
                         if ($CopyMode) {
+                            Write-PSFMessage -Level Debug -Message "Copy resourceFileName dll file"
                             Copy-Item -Path $resourceFileNameFullName -Destination $DestinationPath -Force
                         } else {
+                            Write-PSFMessage -Level Debug -Message "Move resourceFileName dll file"
                             Move-Item -Path $resourceFileNameFullName -Destination $DestinationPath -Force
                         }
                     }
+
                     if ($messageFileNameFullName -notlike $resourceFileNameFullName) {
                         if ($pscmdlet.ShouldProcess("File message dll file '$($messageFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
                             if ($CopyMode) {
+                                Write-PSFMessage -Level Debug -Message "Copy messageFileName dll file"
                                 Copy-Item -Path $messageFileNameFullName -Destination $DestinationPath -Force
                             } else {
+                                Write-PSFMessage -Level Debug -Message "Move messageFileName dll file"
                                 Move-Item -Path $messageFileNameFullName -Destination $DestinationPath -Force
 
                             }
                         }
                     }
+
                     if ($parameterFileNameFullName -notlike $resourceFileNameFullName) {
                         if ($pscmdlet.ShouldProcess("File parameter dll file '$($parameterFileNameFullName)' to '$($DestinationPath)'$(if($CopyMode){"in CopyMode"})", "Move")) {
                             if ($CopyMode) {
+                                Write-PSFMessage -Level Debug -Message "Copy parameterFileName dll file"
                                 Copy-Item -Path $parameterFileNameFullName -Destination $DestinationPath -Force
                             } else {
+                                Write-PSFMessage -Level Debug -Message "Move parameterFileName dll file"
                                 Move-Item -Path $parameterFileNameFullName -Destination $DestinationPath -Force
                             }
                         }
                     }
 
-                    if ($PassThru) { $destfile }
+                    if ($PassThru) {
+                        Write-PSFMessage -Level Verbose -Message "PassThru mode, outputting manifest file"
+                        $destfile
+                    }
                 } else {
-                    if ($PassThru) { $file | Get-Item }
+                    if ($PassThru) {
+                        Write-PSFMessage -Level Verbose -Message "PassThru mode, outputting manifest file"
+                        $file | Get-Item
+                    }
                 }
-
-                #$xmlfile
             }
         }
     }
 
     end {
-
     }
 }
