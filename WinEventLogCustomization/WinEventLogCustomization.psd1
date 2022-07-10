@@ -3,7 +3,7 @@
     RootModule = 'WinEventLogCustomization.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.1.0'
+    ModuleVersion = '0.5.0'
 
     # ID used to uniquely identify this module
     GUID = '9268705a-75d5-401c-b13d-4d1a8f380b17'
@@ -55,7 +55,8 @@
         'Register-WELCEventChannelManifest',
         'Move-WELCEventChannelManifest',
         'Test-WELCEventChannelManifest',
-        'Unregister-WELCEventChannelManifest'
+        'Unregister-WELCEventChannelManifest',
+        'Open-WELCExcelTemplate'
     )
 
     # Cmdlets to export from this module
