@@ -135,7 +135,7 @@ function New-WELCEventChannelManifest {
 
     Begin {
         #region Constants
-        Write-PSFMessage -Level Debug -Message "Setting constants."
+        Write-PSFMessage -Level Debug -Message "Initalizing constants"
         # Path to csc.exe in windows
         [String]$WindowsCSCPath = "$($env:windir)\Microsoft.NET\Framework64\v4.0.30319"
         Write-PSFMessage -Level Debug -Message ".NET Framework in '$($WindowsCSCPath)'"
@@ -156,6 +156,7 @@ function New-WELCEventChannelManifest {
 
 
         #region Validity checks
+        Write-PSFMessage -Level Debug -Message "Initial parameter validation"
         # Check for required resscoures und compilation folder
         if ($DestinationPath.EndsWith('\')) { $DestinationPath = $DestinationPath.TrimEnd('\') }
         $DestinationPath = Resolve-Path $DestinationPath -ErrorAction Stop | Select-Object -ExpandProperty Path
@@ -292,7 +293,8 @@ function New-WELCEventChannelManifest {
     End {
         Write-PSFMessage -Level Verbose -Message "Collected $($channelDefinitions.Count) channel definition$(if($channelDefinitions.Count -gt 1){"s"})"
 
-        $baseNames = $channelDefinitions | Select-Object -ExpandProperty ProviderName | Foreach-Object { $_.split("-")[0] } | Sort-Object -Unique
+        [array]$baseNames = $channelDefinitions | Select-Object -ExpandProperty ProviderName | Foreach-Object { $_.split("-")[0] } | Sort-Object -Unique
+        Write-PSFMessage -Level Verbose -Message "Going to create $($baseNames.Count) manifest file$(if($baseNames.Count -gt 1){"s"}) from collected channel definition$(if($channelDefinitions.Count -gt 1){"s"})"
         foreach ($baseName in $baseNames) {
             # Shorten Name for file
             if ($pscmdlet.ParameterSetName -like "InputObject") {
@@ -319,6 +321,8 @@ function New-WELCEventChannelManifest {
             $fileNameManifest = $fileName + ".man"
             $fullNameManifestTemp = $TempPath + "\" + $fileNameManifest
 
+            Write-PSFMessage -Level Verbose -Message "Arraging manifest: $($fileName) ('$($DestinationPath + "\" + $fileNameManifest)', '$($fullNameDLLDestination)')"
+
             # Filter down the the full channel list
             $channelSelection = $channelDefinitions | Where-Object ProviderName -like "$($baseName)*"
 
@@ -329,6 +333,7 @@ function New-WELCEventChannelManifest {
             Write-PSFMessage -Level Verbose -Message "Working on group '$($baseName)' with $(([array]$channelSelection).Count) channel definitions in $(([array]$providers).count) folders"
 
             #region Basic XML object definition
+            Write-PSFMessage -Level Debug -Message "Start building manifest XML document"
             # Create the manifest XML document
             $XmlWriter = [System.XMl.XmlTextWriter]::new($fullNameManifestTemp, $null)
 
@@ -354,6 +359,7 @@ function New-WELCEventChannelManifest {
             #endregion Basic XML object definition
 
             foreach ($provider in $providers) {
+                Write-PSFMessage -Level Verbose -Message "Writing provider '$($provider.ProviderName)' (GUID:$($provider.ProviderGUID))"
                 # Start the provider
                 $xmlWriter.WriteStartElement("provider")
 
@@ -369,6 +375,7 @@ function New-WELCEventChannelManifest {
 
                 [array]$channels = $channelSelection | Where-Object ProviderSymbol -eq $provider.ProviderSymbol | Select-Object -Property ChannelName, ChannelSymbol
                 ForEach ($channelItem in $channels) {
+                    Write-PSFMessage -Level Verbose -Message "Writing channel '$($channelItem.ChannelName)'"
                     # Start the channel
                     $xmlWriter.WriteStartElement("channel")
 
@@ -414,6 +421,7 @@ function New-WELCEventChannelManifest {
             $finalFilesExpected = @($fullNameManifestTemp, $fullNameDLLTemp)
 
             #region generates "**.h", "**.rc" and "**TEMP.BIN" file from xml manifest
+            Write-PSFMessage -Level Debug -Message "Generate '$($fileName).h', '$($fileName).rc' and '$($fileName)TEMP.BIN' files from xml manifest"
             $tempFilesExpected = @("$($TempPath)\$($fileName).h", "$($TempPath)\$($fileName).rc", "$($TempPath)\$($fileName)TEMP.BIN")
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
             Start-Process `
@@ -422,6 +430,8 @@ function New-WELCEventChannelManifest {
                 -WorkingDirectory $TempPath `
                 -NoNewWindow `
                 -Wait
+
+            Write-PSFMessage -Level Debug -Message "Validating generated files"
             foreach ($tempFile in $tempFilesExpected) {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
@@ -429,9 +439,11 @@ function New-WELCEventChannelManifest {
                     Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
+            Write-PSFMessage -Level Debug -Message "File generated: $([string]::Join(", ", $tempFilesExpected))"
             #endregion generates "**.h", "**.rc" and "**TEMP.BIN" file from xml manifest
 
             #region generates "**.cs" file from xml manifest
+            Write-PSFMessage -Level Debug -Message "Generate '$($fileName).cs' file from xml manifest"
             $tempFilesExpected = @( "$($TempPath)\$($fileName).cs" )
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
             Start-Process `
@@ -440,6 +452,8 @@ function New-WELCEventChannelManifest {
                 -WorkingDirectory $TempPath `
                 -NoNewWindow `
                 -Wait
+
+            Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).cs' file"
             foreach ($tempFile in $tempFilesExpected) {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
@@ -447,9 +461,11 @@ function New-WELCEventChannelManifest {
                     Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
+            Write-PSFMessage -Level Debug -Message "CS file generated: $([string]::Join(", ", $tempFilesExpected)) "
             #endregion generates "**.cs" file from xml manifest
 
             #region generates "**.res" file from xml manifest
+            Write-PSFMessage -Level Debug -Message "Generate '$fileName).res' file from '$($fileName).rc' file"
             $tempFilesExpected = @("$($TempPath)\$($fileName).res")
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
             Start-Process `
@@ -458,6 +474,8 @@ function New-WELCEventChannelManifest {
                 -WorkingDirectory $TempPath `
                 -Wait `
                 -WindowStyle Hidden
+
+            Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).res' file"
             foreach ($tempFile in $tempFilesExpected) {
                 if (Test-Path -Path $tempFile -NewerThan (Get-Date).AddSeconds(-5)) {
                     $tempFilesExisting += Get-ChildItem $tempFile -ErrorAction Stop
@@ -465,15 +483,19 @@ function New-WELCEventChannelManifest {
                     Stop-PSFFunction -Message "Expected temp file '$($tempFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
+            Write-PSFMessage -Level Debug -Message "Res file generated: $([string]::Join(", ", $tempFilesExpected)) "
             #endregion generates "**.res" file from xml manifest
 
             #region final compilation of the dll file
+            Write-PSFMessage -Level Debug -Message "Finally compiling '$fileName).dll' file from generated meta files"
             Start-Process `
                 -FilePath "$($WindowsCSCPath)\csc.exe" `
                 -ArgumentList "/win32res:$($TempPath)\$($fileName).res /unsafe /target:library /out:$($TempPath)\$($fileName).dll $($TempPath)\$($fileName).cs" `
                 -WorkingDirectory $TempPath `
                 -Wait `
                 -WindowStyle Hidden
+
+            Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).dll' file"
             foreach ($FinalFile in $finalFilesExpected) {
                 if (Test-Path -Path $FinalFile -NewerThan (Get-Date).AddSeconds(-15)) {
                     $finalFilesExisting += Get-ChildItem $FinalFile -ErrorAction Stop
@@ -481,6 +503,7 @@ function New-WELCEventChannelManifest {
                     Stop-PSFFunction -Message "Expected temp file '$($FinalFile)' is present, but has a too old timestamp. Something went wrong. Aborting process" -EnableException $true
                 }
             }
+            Write-PSFMessage -Level Debug -Message "DLL file generated: $($TempPath)\$($fileName).dll"
 
             if ($pscmdlet.ShouldProcess("'$($fileNameManifest)' and '$($fileNameDLL)' in '$($DestinationPath)'", "Create")) {
                 Write-PSFMessage -Level Verbose -Message "Writing final $($finalFilesExisting.Count) files to '$($DestinationPath)'"

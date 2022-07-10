@@ -108,28 +108,28 @@
 
             # File and folder validity tests
             if (Test-Path -Path $pathItem -PathType Leaf) {
-                Write-Verbose "Found file '$($pathItem)' as a valid file in path"
+                Write-PSFMessage -Level Verbose -Message "Found file '$($pathItem)' as a valid file in path"
                 $files = $pathItem | Resolve-Path | Get-ChildItem | Select-Object -ExpandProperty FullName
             } elseif (Test-Path -Path $pathItem -PathType Container) {
-                Write-Verbose "Getting files in path '$($pathItem)'"
+                Write-PSFMessage -Level Verbose -Message "Getting files in path '$($pathItem)'"
                 $param = @{
                     Path   = $pathItem
                     "File" = $true
                 }
                 if ($Recursive) { $param["Recursive"] = $true }
                 $files = Get-ChildItem @param | Where-Object Extension -in $FileExtension | Select-Object -ExpandProperty FullName
-                Write-Verbose "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path "
+                Write-PSFMessage -Level Verbose -Message "Found $($files.count) file$(if($files.count -gt 1){"s"}) in path "
             } elseif (-not (Test-Path  -Path $pathItem -PathType Any -IsValid)) {
-                Write-Error "'$pathItem' is not a valid path or file."
+                Write-PSFMessage -Level Error -Message "'$pathItem' is not a valid path or file."
                 continue
             } else {
-                Write-Error "unable to open '$($pathItem)'"
+                Write-PSFMessage -Level Error -Message "Unable to open '$($pathItem)'"
                 continue
             }
 
             # Working trough the actual found file(s)
             foreach ($file in $files) {
-                Write-Verbose "Open file '$($file)' as Excel file"
+                Write-PSFMessage -Level Verbose -Message "Open file '$($file)' as Excel file"
 
                 # Open the file
                 #$excelDocument = Get-ExcelDocument -Path $file
@@ -139,14 +139,14 @@
                 # Select the specified sheet
                 $excelSheet = $excelDocument.Workbook.Worksheets | Where-Object name -like $Sheet
                 if (-not $excelSheet) {
-                    Write-Error "Excel file '$($file.split("\")[-1])' contains no sheet '$($Sheet)'"
+                    Write-PSFMessage -Level Error -Message "Excel file '$($file.split("\")[-1])' contains no sheet '$($Sheet)'"
                     continue
                 }
 
                 # Select the specified table
                 $excelTable = $excelSheet.Tables | Where-Object name -like $Table
                 if (-not $table) {
-                    Write-Error "Unable to find table '$($Table)' in sheet '$($file.split("\")[-1])' "
+                    Write-PSFMessage -Level Error -Message "Unable to find table '$($Table)' in sheet '$($file.split("\")[-1])' "
                     continue
                 }
 
@@ -161,10 +161,11 @@
                 }
 
                 if ($pscmdlet.ShouldProcess("table '$($Table)' in sheet '$($Sheet)' from file '$($file)'", "Import")) {
+                    Write-PSFMessage -Level Debug -Message "Import Excel file"
                     # Import and filter data from excel table into powershell
                     $tableData = Import-Excel @param
                     $data = $tableData | Where-Object LogFullName
-                    Write-Verbose -Message "Found $(([array]$data).Count) usable records in $($tableData.Count) records from table '$($Table)' in worksheet '$($Sheet)'"
+                    Write-PSFMessage -Level Verbose -Message "Found $(([array]$data).Count) usable records in $($tableData.Count) records from table '$($Table)' in worksheet '$($Sheet)'"
 
                     # Output result
                     foreach ($item in $data) {
@@ -174,6 +175,7 @@
                 }
 
                 # Data/variable cleanup
+                Write-PSFMessage -Level Debug -Message "Close Excel file and cleanup variables"
                 $excelSheet.Dispose()
                 $excelDocument.Dispose()
                 Remove-Variable excelDocument, excelSheet, excelTable, tableData, data, param, item -Force -Confirm:$false -ErrorAction:Ignore
