@@ -1,37 +1,198 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Types>
-  <!-- Foo.Bar -->
-  <Type>
-    <Name>Deserialized.Foo.Bar</Name>
-    <Members>
-      <MemberSet>
-        <Name>PSStandardMembers</Name>
+    <!-- WELC.EventLogChannel -->
+    <Type>
+        <Name>WELC.EventLogChannel</Name>
         <Members>
-          <NoteProperty>
-            <Name>
-              TargetTypeForDeserialization
-            </Name>
-            <Value>
-              Foo.Bar
-            </Value>
-          </NoteProperty>
+            <AliasProperty>
+                <Name>ComputerName</Name>
+                <ReferencedMemberName>PSComputerName</ReferencedMemberName>
+            </AliasProperty>
+
+            <AliasProperty>
+                <Name>Name</Name>
+                <ReferencedMemberName>ChannelFullName</ReferencedMemberName>
+            </AliasProperty>
+
+            <ScriptProperty>
+                <Name>Enabled</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.IsEnabled
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LogMode</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LogMode
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LogType</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LogType
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LogFullName</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LogFilePath
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LogFile</Name>
+                <GetScriptBlock>
+                    Split-Path $this.WinEventLog.LogFilePath -Leaf
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LogFolder</Name>
+                <GetScriptBlock>
+                    Split-Path $this.WinEventLog.LogFilePath
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>MaxEventLogSize</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.MaximumSizeInBytes
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>FileSize</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.FileSize
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>RecordCount</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.RecordCount
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>IsFull</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.IsLogFull
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LastWriteTime</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LastWriteTime
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>LastAccessTime</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LastAccessTime
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ChannelFullName</Name>
+                <GetScriptBlock>
+                    $this.WinEventLog.LogName
+                </GetScriptBlock>
+            </ScriptProperty>
+
+
+            <ScriptProperty>
+                <Name>ProviderName</Name>
+                <GetScriptBlock>
+                    $this.Provider.Name
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ProviderId</Name>
+                <GetScriptBlock>
+                    $this.Provider.id
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>MessageFilePath</Name>
+                <GetScriptBlock>
+                    $this.Provider.MessageFilePath
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ResourceFilePath</Name>
+                <GetScriptBlock>
+                    $this.Provider.ResourceFilePath
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ParameterFilePath</Name>
+                <GetScriptBlock>
+                    $this.Provider.ParameterFilePath
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ACL</Name>
+                <GetScriptBlock>
+                    ConvertFrom-SddlString -Sddl $this.WinEventLog.SecurityDescriptor
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>Owner</Name>
+                <GetScriptBlock>
+                    $this.ACL.Owner
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>Access</Name>
+                <GetScriptBlock>
+                    $this.ACL.DiscretionaryAcl
+                </GetScriptBlock>
+            </ScriptProperty>
+
+
+            <CodeProperty IsHidden="true">
+                <Name>SerializationData</Name>
+                <GetCodeReference>
+                    <TypeName>PSFramework.Serialization.SerializationTypeConverter</TypeName>
+                    <MethodName>GetSerializationData</MethodName>
+                </GetCodeReference>
+            </CodeProperty>
         </Members>
-      </MemberSet>
-    </Members>
-  </Type>
-  <Type>
-    <Name>Foo.Bar</Name>
-    <Members>
-      <CodeProperty IsHidden="true">
-        <Name>SerializationData</Name>
-        <GetCodeReference>
-          <TypeName>PSFramework.Serialization.SerializationTypeConverter</TypeName>
-          <MethodName>GetSerializationData</MethodName>
-        </GetCodeReference>
-      </CodeProperty>
-    </Members>
-    <TypeConverter>
-      <TypeName>PSFramework.Serialization.SerializationTypeConverter</TypeName>
-    </TypeConverter>
-  </Type>
+        <TypeConverter>
+            <TypeName>PSFramework.Serialization.SerializationTypeConverter</TypeName>
+        </TypeConverter>
+    </Type>
+<!--
+    <Type>
+        <Name>Deserialized.WELC.EventLogChannel</Name>
+        <Members>
+            <MemberSet>
+                <Name>PSStandardMembers</Name>
+                <Members>
+                    <NoteProperty>
+                        <Name>
+                            TargetTypeForDeserialization
+                        </Name>
+                        <Value>
+                            WELC.EventLogChannel
+                        </Value>
+                    </NoteProperty>
+                </Members>
+            </MemberSet>
+        </Members>
+    </Type>
+-->
 </Types>
