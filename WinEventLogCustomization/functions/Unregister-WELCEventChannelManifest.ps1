@@ -59,7 +59,8 @@
         [Parameter(
             Mandatory = $true,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0
         )]
         [ValidateNotNullOrEmpty()]
         [Alias("File", "FileName", "FullName")]
@@ -69,13 +70,17 @@
         [Parameter(
             ParameterSetName = "ComputerName",
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true
+            ValueFromPipelineByPropertyName = $true,
+            Position = 1
         )]
         [Alias("Host", "Hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 
-        [Parameter(ParameterSetName = "Session")]
+        [Parameter(
+            ParameterSetName = "Session",
+            Position = 1
+        )]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
 

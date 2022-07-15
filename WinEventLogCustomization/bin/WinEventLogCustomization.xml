@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WinEventLogCustomization</name>
+    </assembly>
+    <members>
+        <member name="T:WELC.ChannelDefinition">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelDefinition.ProviderName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelDefinition.ProviderSymbol">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelDefinition.ChannelName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelDefinition.ChannelSymbol">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:WELC.ChannelConfig">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelConfig.ChannelName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelConfig.LogFullName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelConfig.LogMode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelConfig.Enabled">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.ChannelConfig.MaxEventLogSize">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:WELC.EventLogChannel">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.EventLogChannel.PSComputerName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.EventLogChannel.WinEventLog">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:WELC.EventLogChannel.Provider">
+            <summary>
+            
+            </summary>
+        </member>
+    </members>
+</doc>

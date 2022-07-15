@@ -69,19 +69,21 @@ function New-WELCEventChannelManifest {
     Param(
         [Parameter(
             Mandatory = $true,
-            #ValueFromPipeline = $true,
-            ParameterSetName = "InputObject"
+            ValueFromPipeline = $true,
+            ParameterSetName = "InputObject",
+            Position = 0
         )]
         [ValidateNotNullOrEmpty()]
         [Alias("Object", "In", "ChannelDefinition")]
-        #[WELC.ChannelDefinition[]]
+        [WELC.ChannelDefinition[]]
         $InputObject,
 
         [Parameter(
             Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
-            ParameterSetName = "ManualFullChannelName"
+            ParameterSetName = "ManualFullChannelName",
+            Position = 0
         )]
         [ValidateNotNullOrEmpty()]
         [Alias("FullName")]
@@ -100,25 +102,41 @@ function New-WELCEventChannelManifest {
         [String]
         $ProviderSymbol,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "ManualDefinition")]
+        [Parameter(
+            Mandatory = $true,
+            ParameterSetName = "ManualDefinition",
+            Position = 0
+        )]
         [ValidateNotNullOrEmpty()]
         [Alias("Root", "FolderNameRoot", "RootFolderName")]
         [String]
         $FolderRoot,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "ManualDefinition")]
+        [Parameter(
+            Mandatory = $false,
+            ParameterSetName = "ManualDefinition",
+            Position = 1
+        )]
         [ValidateNotNullOrEmpty()]
         [Alias("SecondLevel", "FolderNameSecondLevel", "SecondLevelFolderName")]
         [String]
         $FolderSecondLevel,
 
-        [Parameter(Mandatory = $false, ParameterSetName = "ManualDefinition")]
+        [Parameter(
+            Mandatory = $false,
+            ParameterSetName = "ManualDefinition",
+            Position = 2
+        )]
         [ValidateNotNullOrEmpty()]
-        [String]
         [Alias("ThirdLevel", "FolderNameThirdLevel", "ThirdLevelFolderName")]
+        [String]
         $FolderThirdLevel,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "ManualDefinition")]
+        [Parameter(
+            Mandatory = $true,
+            ParameterSetName = "ManualDefinition",
+            Position = 3
+        )]
         [ValidateNotNullOrEmpty()]
         [String]
         $ChannelName,

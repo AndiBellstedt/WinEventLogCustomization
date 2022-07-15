@@ -39,14 +39,14 @@
     # RequiredAssemblies = @('bin\WinEventLogCustomization.dll')
     RequiredAssemblies = @(
         'bin\EPPlus.Net40.dll'
-        #'bin\WinEventLogCustomization.dll'
+        'bin\WinEventLogCustomization.dll'
     )
 
     # Type files (.ps1xml) to be loaded when importing this module
-    #TypesToProcess = @('xml\WinEventLogCustomization.Types.ps1xml')
+    TypesToProcess = @('xml\WinEventLogCustomization.Types.ps1xml')
 
     # Format files (.ps1xml) to be loaded when importing this module
-    #FormatsToProcess = @('xml\WinEventLogCustomization.Format.ps1xml')
+    FormatsToProcess = @('xml\WinEventLogCustomization.Format.ps1xml')
 
     # Functions to export from this module
     FunctionsToExport = @(
@@ -56,7 +56,8 @@
         'Move-WELCEventChannelManifest',
         'Test-WELCEventChannelManifest',
         'Unregister-WELCEventChannelManifest',
-        'Open-WELCExcelTemplate'
+        'Open-WELCExcelTemplate',
+        'Get-WELCEventChannel'
     )
 
     # Cmdlets to export from this module

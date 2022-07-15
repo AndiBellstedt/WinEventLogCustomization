@@ -1,75 +1,81 @@
 ﻿function Import-WELCChannelDefinition {
     <#
-        .Synopsis
-            Import-WELCChannelDefinition
+    .Synopsis
+        Import-WELCChannelDefinition
 
-        .DESCRIPTION
-            Import definition data for creating custom Windows EventLog Channels from a Excel file
-            The Excel file acts as a definition database and provide easy handling and definition for custom eventlog channels and there structure
+    .DESCRIPTION
+        Import definition data for creating custom Windows EventLog Channels from a Excel file
+        The Excel file acts as a definition database and provide easy handling and definition for custom eventlog channels and there structure
 
-            Additionally in the excel file, there is the possibility to manage XPath-Queries for Windows Event Forwading queries
+        Additionally in the excel file, there is the possibility to manage XPath-Queries for Windows Event Forwading queries
 
-        .PARAMETER Path
-            The Excel file or a folder with Excel files to import
+    .PARAMETER Path
+        The Excel file or a folder with Excel files to import
 
-        .PARAMETER Sheet
-            The Name of the sheet within the Excel file
+    .PARAMETER Sheet
+        The Name of the sheet within the Excel file
 
-        .PARAMETER Table
-            The table containing the definition data within the sheet of the Excel file
+    .PARAMETER Table
+        The table containing the definition data within the sheet of the Excel file
 
-        .PARAMETER FileExtension
-            A list of file extensions indicating Excel files
-            Only needed/used if a folder is specified as a Path
+    .PARAMETER FileExtension
+        A list of file extensions indicating Excel files
+        Only needed/used if a folder is specified as a Path
 
-        .PARAMETER Recursive
-            The specified path will be parsed recursivly
-            Only needed/used if a folder is specified as a Path
+    .PARAMETER Recursive
+        The specified path will be parsed recursivly
+        Only needed/used if a folder is specified as a Path
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER OutputChannelDefinition
+        If specified the function will output a WELC.ChannelDefinition object, instead of WELC.TemplateRecord data
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .EXAMPLE
-            PS C:\> Import-WELCChannelDefinition -Path C:\WELC\MyFile.xls
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-            Import the excel file 'C:\WELC\MyFile.xls' with the default expected parametersettings
-            (Excel file has to contain a Sheet 'CustomEventLogChannels' and a  table 'T_Channel')
+    .EXAMPLE
+        PS C:\> Import-WELCChannelDefinition -Path C:\WELC\MyFile.xls
 
-        .EXAMPLE
-            PS C:\> Import-WELCChannelDefinition -Path C:\WELC
+        Import the excel file 'C:\WELC\MyFile.xls' with the default expected parametersettings
+        (Excel file has to contain a Sheet 'CustomEventLogChannels' and a  table 'T_Channel')
 
-            Import all excel files in path 'C:\WELC' with the default expected parametersettings
-            (sheet and table settings like in first example. Files  have to have an extension with ".xlsx", ".xlsm", ".xls")
+    .EXAMPLE
+        PS C:\> Import-WELCChannelDefinition -Path C:\WELC
 
-        .EXAMPLE
-            PS C:\> Import-WELCChannelDefinition -Path C:\WELC -Recursive -FileExtension "xlsx", "xlsm", "xls"
+        Import all excel files in path 'C:\WELC' with the default expected parametersettings
+        (sheet and table settings like in first example. Files  have to have an extension with ".xlsx", ".xlsm", ".xls")
 
-            Import all excel files in path 'C:\WELC' and in all subfolders with the specified extensions "xlsx", "xlsm", "xls"
-            (sheet and table settings like in first example)
+    .EXAMPLE
+        PS C:\> Import-WELCChannelDefinition -Path C:\WELC -Recursive -FileExtension "xlsx", "xlsm", "xls"
 
-        .EXAMPLE
-            PS C:\> Import-WELCChannelDefinition -Path C:\WELC\MyFile.xls -Sheet "CustomEventLogChannels" -Table "T_Channel"
+        Import all excel files in path 'C:\WELC' and in all subfolders with the specified extensions "xlsx", "xlsm", "xls"
+        (sheet and table settings like in first example)
 
-            Import the excel file 'C:\WELC\MyFile.xls' with the explicit parameter settings on sheet and table
+    .EXAMPLE
+        PS C:\> Import-WELCChannelDefinition -Path C:\WELC\MyFile.xls -Sheet "CustomEventLogChannels" -Table "T_Channel"
 
-        .NOTES
-            Author: Andreas Bellstedt
+        Import the excel file 'C:\WELC\MyFile.xls' with the explicit parameter settings on sheet and table
 
-        .LINK
-            https://github.com/AndiBellstedt/WinEventLogCustomization
+    .NOTES
+        Author: Andreas Bellstedt
+
+    .LINK
+        https://github.com/AndiBellstedt/WinEventLogCustomization
     #>
     [CmdLetBinding(
+        DefaultParameterSetName = "OutputTemplateRecord",
         SupportsShouldProcess = $true,
+        PositionalBinding = $true,
         ConfirmImpact = 'Low'
     )]
     param(
         [parameter(
             Mandatory = $true,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0
         )]
         [Alias("FullName", "FilePath", "Folder", "File")]
         [string[]]
@@ -89,7 +95,15 @@
         $FileExtension = @("xlsx", "xlsm", "xls"),
 
         [switch]
-        $Recursive
+        $Recursive,
+
+        [Parameter(ParameterSetName = "OutputChannelDefinition" )]
+        [switch]
+        $OutputChannelDefinition,
+
+        [Parameter(ParameterSetName = "OutputChannelConfig" )]
+        [switch]
+        $OutputChannelConfig
     )
 
     begin {
@@ -103,6 +117,8 @@
     }
 
     process {
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+
         # working trough the specified path(s)
         foreach ($pathItem in $Path) {
 
@@ -169,8 +185,36 @@
 
                     # Output result
                     foreach ($item in $data) {
-                        $item.psobject.TypeNames.Insert(0, "WELC.ChannelDefinition")
-                        $item
+                        switch ($pscmdlet.ParameterSetName) {
+                            "OutputChannelDefinition" {
+                                $output = [WELC.ChannelDefinition]@{
+                                    ChannelName    = $item.ChannelName
+                                    ChannelSymbol  = $item.ChannelSymbol
+                                    ProviderName   = $item.ProviderName
+                                    ProviderSymbol = $item.ProviderSymbol
+                                }
+                                $output
+                            }
+                            "OutputChannelConfig" {
+                                $output = [WELC.ChannelConfig]@{
+                                    ChannelName     = $item.ChannelName
+                                    LogFullName     = $item.LogFullName
+                                    LogMode         = $item.LogMode
+                                    Enabled         = [bool]::Parse($item.Enabled)
+                                    MaxEventLogSize = $item.MaxEventLogSize / 1
+                                }
+                                $output
+                            }
+                            "OutputTemplateRecord" {
+                                $item.psobject.TypeNames.Insert(0, "WELC.TemplateRecord")
+                                $item
+                            }
+
+                            Default {
+                                Stop-PSFFunction -Message "Unhandeled ParameterSetName. Developers mistake." -EnableException $true
+                                throw
+                            }
+                        }
                     }
                 }
 

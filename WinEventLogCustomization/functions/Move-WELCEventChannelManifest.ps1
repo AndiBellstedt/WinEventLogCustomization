@@ -58,14 +58,18 @@
         [Parameter(
             Mandatory = $true,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0
         )]
         [ValidateNotNullOrEmpty()]
         [Alias("File", "FileName", "FullName")]
         [String[]]
         $Path,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(
+            Mandatory = $true,
+            Position = 1
+        )]
         [String]
         $DestinationPath,
 

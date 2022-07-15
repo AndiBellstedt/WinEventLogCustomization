@@ -53,10 +53,14 @@
     #>
     [CmdletBinding(
         DefaultParameterSetName = 'ComputerName',
+        PositionalBinding = $true,
         ConfirmImpact = 'low'
     )]
     Param(
-        [Parameter( ValueFromPipeline = $true )]
+        [Parameter(
+            ValueFromPipeline = $true,
+            Position = 0
+        )]
         [Alias("Name", "ChannelName", "LogName")]
         [ValidateNotNullOrEmpty()]
         [String[]]
@@ -65,13 +69,17 @@
         [Parameter(
             ParameterSetName = "ComputerName",
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true
+            ValueFromPipelineByPropertyName = $true,
+            Position = 1
         )]
         [Alias("Host", "Hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 
-        [Parameter( ParameterSetName = "Session" )]
+        [Parameter(
+            ParameterSetName = "Session",
+            Position = 1
+        )]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
 
@@ -85,9 +93,8 @@
         # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block
         if ($Session) { $ComputerName = $Session.ComputerName }
 
-        $pathBound = Test-PSFParameterBinding -ParameterName Path
+        $channelFullNameBound = Test-PSFParameterBinding -ParameterName ChannelFullName
         $computerBound = Test-PSFParameterBinding -ParameterName ComputerName
-
     }
 
     process {
@@ -95,8 +102,8 @@
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
-        if (-not ($pathBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
-            if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $ChannelFullName = "" }
+        if (-not ($channelFullNameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
+            if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $ChannelFullName = "*" }
         }
         #endregion parameterset workarround
 
@@ -119,9 +126,10 @@
 
                 Write-PSFMessage -Level Verbose -Message "Query EventLog channel '$($channel)' on computer '$($computer)'" -Target $computer
                 try {
-                    $winEventChannels = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { Get-WinEvent -ListLog $args[0] }
+                    $winEventChannels = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { Get-WinEvent -ListLog $args[0] -ErrorAction Stop }
                 } catch {
                     Stop-PSFFunction -Message "Unable to query EventLog channel '$($channel)' on computer '$($computer)'. ErrorMessage: $($ErrorReturn.Exception.Message | Select-Object -Unique)" -Target $computer -ErrorRecord $_
+                    continue
                 }
 
                 [array]$providerNames = $winEventChannels.ProviderNames | Select-Object -Unique
@@ -148,16 +156,19 @@
                     Write-PSFMessage -Level Error -Message "Error query provider ($([string]::Join(", ", $providerNames))) from EventLog Channel '$($winEventChannels.LogName)' on computer '$($computer)'. ErrorMessage: $([string]::join(" ", $errorMessages))" -Target $computer
                 }
 
+                Write-PSFMessage -Level Verbose -Message "Output $(([Array]$winEventChannels).count) EventLog channel$(if(([Array]$winEventChannels).count -gt 1){"s"})" -Target $computer
                 # Output result
                 foreach ($winEventChannel in $winEventChannels) {
-                    $winEventChannel | Add-Member -MemberType NoteProperty -Name "Provider" -Value ( $winEventChannel.ProviderNames | ForEach-Object { $_name = $_; $winEventProviders | Where-Object ProviderName -like $_name } )
-                    $winEventChannel.psobject.TypeNames.Insert(0, "WELC.EventLogChannel")
 
-                    $winEventChannel
+                    $output = [WELC.EventLogChannel]@{
+                        "PSComputerName" = $computer
+                        "WinEventLog"    = $winEventChannel
+                        "Provider"       = ( $winEventChannel.ProviderNames | ForEach-Object { $_name = $_; $winEventProviders | Where-Object ProviderName -like $_name } )
+                    }
+
+                    $output
                 }
-
             }
-
         }
         #endregion Processing Events
 
