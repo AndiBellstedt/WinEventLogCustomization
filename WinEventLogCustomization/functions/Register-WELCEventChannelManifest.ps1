@@ -181,41 +181,47 @@
                 $dllFiles = @()
 
                 Write-PSFMessage -Level Debug -Message "Gather path of resourceFileName DLL"
-                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
-                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
-                    $dllFiles += $dllFile
-                } else {
-                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName -Leaf)"
-                    if (Test-Path -Path $dllFile -PathType Leaf) {
+                $dllFileList = $xmlfile.instrumentationManifest.instrumentation.events.provider.resourceFileName
+                foreach ($dllFile in $dllFileList) {
+                    if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                         $dllFiles += $dllFile
                     } else {
-                        Stop-PSFFunction -Message "Unexpected behavior while locating ressource dll file"
+                        $dllFile = "$(split-path $file)\$(Split-Path -Path $dllFile -Leaf)"
+                        if (Test-Path -Path $dllFile -PathType Leaf) {
+                            $dllFiles += $dllFile
+                        } else {
+                            Stop-PSFFunction -Message "Unexpected behavior while locating ressource dll file"
+                        }
                     }
                 }
 
                 Write-PSFMessage -Level Debug -Message "Gather path of messageFileName DLL"
-                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
-                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
-                    $dllFiles += $dllFile
-                } else {
-                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName -Leaf)"
-                    if (Test-Path -Path $dllFile -PathType Leaf) {
+                $dllFileList = $xmlfile.instrumentationManifest.instrumentation.events.provider.messageFileName
+                foreach ($dllFile in $dllFileList) {
+                    if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                         $dllFiles += $dllFile
                     } else {
-                        Stop-PSFFunction -Message "Unexpected behavior while locating message dll file"
+                        $dllFile = "$(split-path $file)\$(Split-Path -Path $dllFile -Leaf)"
+                        if (Test-Path -Path $dllFile -PathType Leaf) {
+                            $dllFiles += $dllFile
+                        } else {
+                            Stop-PSFFunction -Message "Unexpected behavior while locating message dll file"
+                        }
                     }
                 }
 
                 Write-PSFMessage -Level Debug -Message "Gather path of parameterFileName DLL"
-                $dllFile = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
-                if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
-                    $dllFiles += $dllFile
-                } else {
-                    $dllFile = "$(split-path $file)\$(Split-Path -Path $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName -Leaf)"
-                    if (Test-Path -Path $dllFile -PathType Leaf) {
+                $dllFileList = $xmlfile.instrumentationManifest.instrumentation.events.provider.parameterFileName
+                foreach ($dllFile in $dllFileList) {
+                    if ((Test-Path -Path $dllFile -PathType Leaf) -and ((Split-Path -Path $dllFile) -notlike $DestinationPath)) {
                         $dllFiles += $dllFile
                     } else {
-                        Stop-PSFFunction -Message "Unexpected behavior while locating parameter dll file"
+                        $dllFile = "$(split-path $file)\$(Split-Path -Path $dllFile -Leaf)"
+                        if (Test-Path -Path $dllFile -PathType Leaf) {
+                            $dllFiles += $dllFile
+                        } else {
+                            Stop-PSFFunction -Message "Unexpected behavior while locating parameter dll file"
+                        }
                     }
                 }
 
