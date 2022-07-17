@@ -38,21 +38,29 @@
             <ScriptProperty>
                 <Name>LogFullName</Name>
                 <GetScriptBlock>
-                    $this.WinEventLog.LogFilePath
+                    if($this.WinEventLog.LogFilePath -like '%SystemRoot%*') {
+                        $this.WinEventLog.LogFilePath.Replace('%SystemRoot%', $env:SystemRoot)
+                    } else {
+                        if($this.WinEventLog.LogFilePath -like '%windir%*') {
+                            $this.WinEventLog.LogFilePath.Replace('%windir%', $env:SystemRoot)
+                        } else {
+                            $this.WinEventLog.LogFilePath
+                        }
+                    }
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
                 <Name>LogFile</Name>
                 <GetScriptBlock>
-                    Split-Path $this.WinEventLog.LogFilePath -Leaf
+                    Split-Path $this.LogFullName -Leaf
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
                 <Name>LogFolder</Name>
                 <GetScriptBlock>
-                    Split-Path $this.WinEventLog.LogFilePath
+                    Split-Path $this.LogFullName
                 </GetScriptBlock>
             </ScriptProperty>
 
@@ -123,21 +131,45 @@
             <ScriptProperty>
                 <Name>MessageFilePath</Name>
                 <GetScriptBlock>
-                    $this.Provider.MessageFilePath
+                    if($this.Provider.MessageFilePath -like '%SystemRoot%*') {
+                        $this.Provider.MessageFilePath.Replace('%SystemRoot%', $env:SystemRoot)
+                    } else {
+                        if($this.Provider.MessageFilePath -like '%windir%*') {
+                            $this.Provider.MessageFilePath.Replace('%windir%', $env:SystemRoot)
+                        } else {
+                            $this.Provider.MessageFilePath
+                        }
+                    }
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
                 <Name>ResourceFilePath</Name>
                 <GetScriptBlock>
-                    $this.Provider.ResourceFilePath
+                    if($this.Provider.ResourceFilePath -like '%SystemRoot%*') {
+                        $this.Provider.ResourceFilePath.Replace('%SystemRoot%', $env:SystemRoot)
+                    } else {
+                        if($this.Provider.ResourceFilePath -like '%windir%*') {
+                            $this.Provider.ResourceFilePath.Replace('%windir%', $env:SystemRoot)
+                        } else {
+                            $this.Provider.ResourceFilePath
+                        }
+                    }
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
                 <Name>ParameterFilePath</Name>
                 <GetScriptBlock>
-                    $this.Provider.ParameterFilePath
+                    if($this.Provider.ParameterFilePath -like '%SystemRoot%*') {
+                        $this.Provider.ParameterFilePath.Replace('%SystemRoot%', $env:SystemRoot)
+                    } else {
+                        if($this.Provider.ParameterFilePath -like '%windir%*') {
+                            $this.Provider.ParameterFilePath.Replace('%windir%', $env:SystemRoot)
+                        } else {
+                            $this.Provider.ParameterFilePath
+                        }
+                    }
                 </GetScriptBlock>
             </ScriptProperty>
 
