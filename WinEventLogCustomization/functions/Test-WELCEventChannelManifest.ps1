@@ -12,6 +12,12 @@
     .PARAMETER Path
         The path to the manifest file
 
+    .PARAMETER OnlyDLLPath
+        Only verify path of DLL files in Manifest and skip validation of properties
+
+    .PARAMETER Property
+        Explicitly validate only the specified property
+
     .PARAMETER PassThru
         The moved files will be parsed to the pipeline for further processing.
 
@@ -45,6 +51,7 @@
         ConfirmImpact = 'Low',
         DefaultParameterSetName = "General"
     )]
+    [OutputType("System.Boolean")]
     param (
         [Parameter(
             Mandatory = $true,

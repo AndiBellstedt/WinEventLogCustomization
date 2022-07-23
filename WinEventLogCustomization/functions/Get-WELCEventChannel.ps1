@@ -56,6 +56,7 @@
         PositionalBinding = $true,
         ConfirmImpact = 'low'
     )]
+    [OutputType([WELC.EventLogChannel])]
     Param(
         [Parameter(
             ValueFromPipeline = $true,

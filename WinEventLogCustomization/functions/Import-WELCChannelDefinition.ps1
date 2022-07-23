@@ -74,6 +74,8 @@
         PositionalBinding = $true,
         ConfirmImpact = 'Low'
     )]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseOutputTypeCorrectly', '', Justification = 'Intentional')]
+    [OutputType("WELC.ChannelDefinition", "WELC.ChannelConfig", "WELC.TemplateRecord", "PSObject")]
     param(
         [parameter(
             Mandatory = $true,
@@ -191,23 +193,27 @@
                     foreach ($item in $data) {
                         switch ($pscmdlet.ParameterSetName) {
                             "OutputChannelDefinition" {
-                                $output = [WELC.ChannelDefinition]@{
-                                    ChannelName    = $item.ChannelName
-                                    ChannelSymbol  = $item.ChannelSymbol
-                                    ProviderName   = $item.ProviderName
-                                    ProviderSymbol = $item.ProviderSymbol
+                                if ($OutputChannelDefinition) {
+                                    $output = [WELC.ChannelDefinition]@{
+                                        ChannelName    = $item.ChannelName
+                                        ChannelSymbol  = $item.ChannelSymbol
+                                        ProviderName   = $item.ProviderName
+                                        ProviderSymbol = $item.ProviderSymbol
+                                    }
+                                    $output
                                 }
-                                $output
                             }
                             "OutputChannelConfig" {
-                                $output = [WELC.ChannelConfig]@{
-                                    ChannelName     = $item.ChannelName
-                                    LogFullName     = $item.LogFullName
-                                    LogMode         = $item.LogMode
-                                    Enabled         = [bool]::Parse($item.Enabled)
-                                    MaxEventLogSize = $item.MaxEventLogSize / 1
+                                if ($OutputChannelConfig) {
+                                    $output = [WELC.ChannelConfig]@{
+                                        ChannelName     = $item.ChannelName
+                                        LogFullName     = $item.LogFullName
+                                        LogMode         = $item.LogMode
+                                        Enabled         = [bool]::Parse($item.Enabled)
+                                        MaxEventLogSize = $item.MaxEventLogSize / 1
+                                    }
+                                    $output
                                 }
-                                $output
                             }
                             "OutputTemplateRecord" {
                                 $item.psobject.TypeNames.Insert(0, "WELC.TemplateRecord")

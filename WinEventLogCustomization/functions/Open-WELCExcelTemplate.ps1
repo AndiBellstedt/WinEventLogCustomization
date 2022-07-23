@@ -3,7 +3,7 @@
         .Synopsis
             Open-WELCExcelTemplate
 
-        .DESCRIPTION-
+        .DESCRIPTION
             Open Excel template file for managing custom EventLog channel definition
 
             For obvious reason, Excel or equivalent tools needs to be present on the machine

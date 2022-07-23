@@ -1,4 +1,4 @@
-function Set-WELCEventChannel {
+﻿function Set-WELCEventChannel {
     <#
     .SYNOPSIS
         Set-WELCEventChannel
@@ -89,7 +89,29 @@ function Set-WELCEventChannel {
 
 
     .EXAMPLE
-        PS C:\> Set-WELCEventChannel
+        PS C:\> Set-WELCEventChannel -ChannelFullName "App1/MyLog" -LogMode Circular -LogFilePath "C:\EventLogs\App1-MyLog.evtx"
+
+        Set the 'MyLog' EventLog in the EventFolder 'App1' to circular logging and the path of the logfile to 'C:\EventLogs\App1-MyLog.evtx'
+
+    .EXAMPLE
+        PS C:\> $channels | Set-WELCEventChannel -Enabled $true -MaxEventLogSize 1GB
+
+        Enables the EventChannels from the $channels variable and set maximum size to 1GB.
+
+        Assuming the $channels variable is filled with something like
+        $channels = Get-WELCEventChannel -ChannelFullName "App1/MyLog", "App2/MyLog"
+
+    .EXAMPLE
+        PS C:\> $ChannelConfig | Set-WELCEventChannel -Enabled $true -CompressLogFolder $true -AllowFileAccessForLocalService $true
+
+        Enables the EventChannels from the $ChannelConfig variable and set all the properties within the $ChannelConfig variable.
+        Additionally, the logfile/logfolder for the EventLogs will be compressed (except if it is a folder in Windows\System32),
+        and the SID for "Local Service" gain Read/Write-Access.
+
+        Assuming the $channels variable is filled with something like
+        $ChannelConfig = Import-WELCChannelDefinition -Path C:\EventLogs\WinEventLogCustomization.xlsx -OutputChannelConfig
+
+        Excel template file can be created/opened with Open-WELCExcelTemplate
 
     #>
     [CmdletBinding(

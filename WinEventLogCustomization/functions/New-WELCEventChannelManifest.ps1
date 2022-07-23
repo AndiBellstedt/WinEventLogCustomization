@@ -1,4 +1,4 @@
-function New-WELCEventChannelManifest {
+﻿function New-WELCEventChannelManifest {
     <#
     .SYNOPSIS
         New-WELCEventChannelManifest
@@ -11,10 +11,64 @@ function New-WELCEventChannelManifest {
         allow custom logs.
 
     .PARAMETER InputObject
-        The input csv file for creating the xml manifest and the dll
+        WELC.Channeldefinition object to create manifest and the dll file from
+
+        Can be piped in with somthing like:
+        Import-WELCChannelDefinition -Path C:\EventLogs\WinEventLogCustomization.xlsx -OutputChannelDefinition
+
+        Excel template file can be created/opened with Open-WELCExcelTemplate
+
+    .PARAMETER ChannelFullName
+        The full name for a EventChannel.
+
+        Valid Formats are:
+        "FolderRoot/ChannelName"
+        "FolderRoot/SubFolder1/SubFolder2/ChannelName"
+
+        String have to be specified correctly with slashes ("/"), NOT with backslash ("\")!
+
+    .PARAMETER FolderRoot
+        Name of the folder within the Windows EventLog System under "Application and Services"
+
+    .PARAMETER FolderSecondLevel
+        Name of the folder within the "FolderRoot"
+
+    .PARAMETER FolderThirdLevel
+        Name of the folder within the "FolderSecondLevel"
+
+    .PARAMETER ChannelName
+        Name of the EventChannel within it's folder
+
+    .PARAMETER ChannelSymbol
+        Name of the ChannelSymbol
+
+        Optional. If not specified, the name will be derived from the ChannelName
+
+    .PARAMETER ProviderName
+        Name of the EventLog Provider
+
+        Optional. If not specified, the name will be derived from the folder name(s)
+
+
+    .PARAMETER ProviderSymbol
+        Name of the ProviderSymbol
+
+        Optional. If not specified, the name will be derived from the ProviderName
+
+    .PARAMETER OutputFile
+        The filename of the manifest to create.
+        Please specify only a FILE name, not a full qualified path
+
+        If not specified, the name will be derived from the ChannelFullName/ ChannelName
 
     .PARAMETER DestinationPath
-        Output path for xml manifest file (.man file) and the dll-file for the eventlog viewer
+        Output path for manifest- and the dll file to register an EventChannel within the Windows EventLog system
+
+    .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
         Author: Andreas Bellstedt
