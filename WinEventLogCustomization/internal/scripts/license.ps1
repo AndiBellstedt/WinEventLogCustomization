@@ -1,5 +1,5 @@
-﻿New-PSFLicense -Product 'WinEventLogCustomization' -Manufacturer 'Andreas.Bellstedt' -ProductVersion $script:ModuleVersion -ProductType Module -Name MIT -Version "1.0.0.0" -Date (Get-Date "2022-06-26") -Text @"
-Copyright (c) 2022 Andreas.Bellstedt
+﻿New-PSFLicense -Product 'WinEventLogCustomization' -Manufacturer 'Andreas Bellstedt' -ProductVersion $script:ModuleVersion -ProductType Module -Name MIT -Version "1.0.0.0" -Date (Get-Date "2022-06-26") -Text @"
+Copyright (c) 2022 Andreas Bellstedt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

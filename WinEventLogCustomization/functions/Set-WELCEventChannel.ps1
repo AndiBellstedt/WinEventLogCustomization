@@ -120,6 +120,7 @@
         PositionalBinding = $true,
         ConfirmImpact = 'Medium'
     )]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSReviewUnusedParameter", '', Justification = "Intentional, Pester not covering the usage correct")]
     Param(
         [Parameter(
             ParameterSetName = "TemplateChannelConfig",
@@ -285,14 +286,14 @@
                     $null = $configList.Add(
                         [PSCustomObject]@{
                             EventChannel                   = $eventChannelItem
-                            Enabled                        = if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled }
-                            MaxEventLogSize                = if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize }
-                            LogMode                        = if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode }
-                            LogFileFullName                = if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName }
-                            LogFilePath                    = if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder }
-                            CompressLogFolder              = if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder }
-                            AllowFileAccessForLocalService = if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService }
-                            EventChannelSDDL               = if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL }
+                            Enabled                        = ( if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled } )
+                            MaxEventLogSize                = ( if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize } )
+                            LogMode                        = ( if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode } )
+                            LogFileFullName                = ( if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName } )
+                            LogFilePath                    = ( if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder } )
+                            CompressLogFolder              = ( if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder } )
+                            AllowFileAccessForLocalService = ( if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService } )
+                            EventChannelSDDL               = ( if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL } )
                         }
                     )
                 }
@@ -309,14 +310,14 @@
                                 $null = $configList.Add(
                                     [PSCustomObject]@{
                                         EventChannel                   = $eventChannelItem
-                                        Enabled                        = if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled }
-                                        MaxEventLogSize                = if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize }
-                                        LogMode                        = if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode }
-                                        LogFileFullName                = if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName }
-                                        LogFilePath                    = if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder }
-                                        CompressLogFolder              = if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder }
-                                        AllowFileAccessForLocalService = if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService }
-                                        EventChannelSDDL               = if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL }
+                                        Enabled                        = ( if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled } )
+                                        MaxEventLogSize                = ( if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize } )
+                                        LogMode                        = ( if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode } )
+                                        LogFileFullName                = ( if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName } )
+                                        LogFilePath                    = ( if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder } )
+                                        CompressLogFolder              = ( if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder } )
+                                        AllowFileAccessForLocalService = ( if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService } )
+                                        EventChannelSDDL               = ( if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL } )
                                     }
                                 )
                             }
