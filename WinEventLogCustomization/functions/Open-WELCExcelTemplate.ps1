@@ -35,6 +35,7 @@
     end {
         $path = "$($ModuleRoot)\bin\WinEventLogCustomization.xltx"
         $pathExtension = $path.Split(".")[-1]
+        $null = New-PSDrive -PSProvider registry -Root HKEY_CLASSES_ROOT -Name HKCR
 
         Write-PSFMessage -Level Debug -Message "Looking for application to open '$($pathExtension)' files"
         # parse registry for file extension
