@@ -1,11 +1,120 @@
 ﻿TOPIC
-	about_WinEventLogCustomization
-	
+    about_WinEventLogCustomization
+
 SHORT DESCRIPTION
-	Explains how to use the WinEventLogCustomization powershell module
-	
+    A PowerShell module helping you build custom eventlog channels and registering them into Windows Event Viewer.
+
+    The build logs appear under "Application and Services",
+    even like the "Windows PowerShell"  or the "PowerShellCore/Operational" EventLog.
+
+    All cmdlets are build with
+        - powershell regular verbs
+        - pipeline availabilities wherever it makes sense
+        - comprehensive logging on verbose and debug channel by the logging system of PSFramework
+
+    Prerequisites
+        - Windows PowerShell 5.1
+        - PowerShell 6 or 7
+        - Administrative Priviledges are required for registering or unregistering EventChannels
+
 LONG DESCRIPTION
-	<Insert Content here>
+    Creating a manifest for a EventChannel
+    --------------------------------------
+
+    For a quick start you can just execute:
+        New-WELCEventChannelManifest -ChannelFullName "AndiBellstedt/MyPersonalLog"
+
+    another way is the following command style, if you are not familiar with the notation on ChannelFullNames:
+        New-WELCEventChannelManifest -RootFolderName "AndiBellstedt" -FolderSecondLevel "PowerShell" -FolderThirdLevel "Tasks" -ChannelName "Operational"
+
+
+    This will create a manifest- and a dll file (AndiBellstedt.man & AndiBellstedt.dll) within you current directory.
+    With the manifest file, the dll file can be registered to Windows EventLog system.
+
+    !Attention!, the manifest file contains the paths to the dll and should not be moved in the Windows Explorer.
+    There is a command in the module to move the manifest with it's dll file consistently.
+
+
+    Register the EventChannel
+    -------------------------
+
+    Registering a manifest and its dll file is also easy:
+        Register-WELCEventChannelManifest -Path .\AndiBellstedt.man
+
+    !Attention!, executing this command will require admninistrative priviledges.
+    Due to the fact, that changes on the Windows EventLog system are a administrative task.
+
+    Following this, results in a new folder "AndiBellstedt" with two subfolders ("PowerShell" & "Tasks")
+    and a EventLog "Operational" under "Application and Services Logs" withing the Event Viewer.
+
+
+    Remove the EventChannel
+    -----------------------
+
+    If the EventChannel is no longer needed, it can be removed by unregistering the manifest:
+        UnRegister-WELCEventChannelManifest -Path .\AndiBellstedt.man
+
+
+    Show registered EventChannels
+    -----------------------------
+
+    After registering a manifest, the defined EventChannel can be queried
+    To query a EventChannel you can use:
+        Get-WELCEventChannel -ChannelFullName "AndiBellstedt-PowerShell-Tasks/Operational"
+
+    This will output something like this, showing you the details and the config of the EventChannel:
+        PS C:\> Get-WELCEventChannel -ChannelFullName "AndiBellstedt-PowerShell-Tasks/Operational" | Format-List
+
+        ComputerName      : MyComputer
+        Name              : AndiBellstedt-PowerShell-Tasks/Operational
+        Enabled           : False
+        LogMode           : Circular
+        LogType           : Administrative
+        LogFullName       : C:\WINDOWS\System32\Winevt\Logs\AndiBellstedt-PowerShell-Tasks%4Operational.evtx
+        MaxEventLogSize   : 1052672
+        FileSize          :
+        RecordCount       :
+        IsFull            :
+        LastWriteTime     :
+        LastAccessTime    :
+        ProviderName      : AndiBellstedt-PowerShell-Tasks
+        ProviderId        : 43b94bbe-2d97-4f04-96b4-c254483b53f4
+        MessageFilePath   : C:\EventLogs\AndiBellstedt.dll
+        ResourceFilePath  : C:\EventLogs\AndiBellstedt.dll
+        ParameterFilePath : C:\EventLogs\AndiBellstedt.dll
+        Owner             : Administrators
+        Access            : {NT AUTORITY\BATCH: AccessAllowed (ListDirectory, WriteData), NT AUTORITY\INTERACTIVE:
+                            AccessAllowed (ListDirectory, WriteData), NT AUTORITY\SERVICE: AccessAllowed (ListDirectory,
+                            WriteData), NT AUTORITY\SYSTEM: AccessAllowed (ChangePermissions, CreateDirectories, Delete,
+                            GenericExecute, ListDirectory, ReadPermissions, TakeOwnership, WriteData, WriteKey)…}
+
+    Configuration on EventChannels
+    ------------------------------
+
+    There are multiple ways to configure a EventChannel.
+    The first, and explicit one is:
+        Set-WELCEventChannel -ChannelFullName "AndiBellstedt-PowerShell-Tasks/Operational" -Enabled $true -MaxEventLogSize 1GB -LogMode Circular -LogFilePath "C:\EventLogs\AB-PS-T-Ops.evtx"
+
+    Another way is to pipe in the result of a Get-WELCEventChannel command:
+        $channel = Get-WELCEventChannel "AndiBellstedt*"
+
+        $channel | Set-WELCEventChannel -Enabled $true -MaxEventLogSize 1GB -LogMode AutoBackup -LogFilePath "C:\EventLogs"
+
+    Doing it this way, $channel can contain more than one EventChannel to configure.
+
 
 KEYWORDS
-	WinEventLogCustomization
+    WinEventLogCustomization
+    EventLog
+    WindowsEvent
+    WindowsEventLog
+    EventLogChannel
+    EventLogChannels
+    EventChannel
+    EventChannels
+    CustomEventChannel
+    CustomEventLog
+    CustomEventLogChannel
+    CustomEventLogFile
+    CustomEventLogFiles
+    EventLogManifest
