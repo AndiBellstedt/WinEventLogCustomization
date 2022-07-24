@@ -209,7 +209,7 @@
                                         ChannelName     = $item.ChannelName
                                         LogFullName     = $item.LogFullName
                                         LogMode         = $item.LogMode
-                                        Enabled         = [bool]::Parse($item.Enabled)
+                                        Enabled         = [bool]::Parse($item.ChannelEnabled)
                                         MaxEventLogSize = $item.MaxEventLogSize / 1
                                     }
                                     $output
