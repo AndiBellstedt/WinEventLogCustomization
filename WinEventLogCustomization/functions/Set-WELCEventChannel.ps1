@@ -120,6 +120,7 @@
         PositionalBinding = $true,
         ConfirmImpact = 'Medium'
     )]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSReviewUnusedParameter", '', Justification = "Intentional, Pester not covering the usage correct")]
     Param(
         [Parameter(
             ParameterSetName = "TemplateChannelConfig",
