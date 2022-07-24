@@ -5,30 +5,27 @@ It expects as input an ApiKey authorized to publish the module.
 Insert any build steps you may need to take before publishing it here.
 #>
 param (
-	$ApiKey,
-	
-	$WorkingDirectory,
-	
-	$Repository = 'PSGallery',
-	
-	[switch]
-	$LocalRepo,
-	
-	[switch]
-	$SkipPublish,
-	
-	[switch]
-	$AutoVersion
+    $ApiKey,
+
+    $WorkingDirectory,
+
+    $Repository = 'PSGallery',
+
+    [switch]
+    $LocalRepo,
+
+    [switch]
+    $SkipPublish,
+
+    [switch]
+    $AutoVersion
 )
 
 #region Handle Working Directory Defaults
-if (-not $WorkingDirectory)
-{
-	if ($env:RELEASE_PRIMARYARTIFACTSOURCEALIAS)
-	{
-		$WorkingDirectory = Join-Path -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -ChildPath $env:RELEASE_PRIMARYARTIFACTSOURCEALIAS
-	}
-	else { $WorkingDirectory = $env:SYSTEM_DEFAULTWORKINGDIRECTORY }
+if (-not $WorkingDirectory) {
+    if ($env:RELEASE_PRIMARYARTIFACTSOURCEALIAS) {
+        $WorkingDirectory = Join-Path -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -ChildPath $env:RELEASE_PRIMARYARTIFACTSOURCEALIAS
+    } else { $WorkingDirectory = $env:SYSTEM_DEFAULTWORKINGDIRECTORY }
 }
 if (-not $WorkingDirectory) { $WorkingDirectory = Split-Path $PSScriptRoot }
 #endregion Handle Working Directory Defaults
@@ -43,35 +40,33 @@ $text = @()
 $processed = @()
 
 # Gather Stuff to run before
-foreach ($filePath in (& "$($PSScriptRoot)\..\WinEventLogCustomization\internal\scripts\preimport.ps1"))
-{
-	if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
-	
-	$item = Get-Item $filePath
-	if ($item.PSIsContainer) { continue }
-	if ($item.FullName -in $processed) { continue }
-	$text += [System.IO.File]::ReadAllText($item.FullName)
-	$processed += $item.FullName
+foreach ($filePath in (& "$($PSScriptRoot)\..\WinEventLogCustomization\internal\scripts\preimport.ps1")) {
+    if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
+
+    $item = Get-Item $filePath
+    if ($item.PSIsContainer) { continue }
+    if ($item.FullName -in $processed) { continue }
+    $text += [System.IO.File]::ReadAllText($item.FullName)
+    $processed += $item.FullName
 }
 
 # Gather commands
 Get-ChildItem -Path "$($publishDir.FullName)\WinEventLogCustomization\internal\functions\" -Recurse -File -Filter "*.ps1" | ForEach-Object {
-	$text += [System.IO.File]::ReadAllText($_.FullName)
+    $text += [System.IO.File]::ReadAllText($_.FullName)
 }
 Get-ChildItem -Path "$($publishDir.FullName)\WinEventLogCustomization\functions\" -Recurse -File -Filter "*.ps1" | ForEach-Object {
-	$text += [System.IO.File]::ReadAllText($_.FullName)
+    $text += [System.IO.File]::ReadAllText($_.FullName)
 }
 
 # Gather stuff to run afterwards
-foreach ($filePath in (& "$($PSScriptRoot)\..\WinEventLogCustomization\internal\scripts\postimport.ps1"))
-{
-	if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
-	
-	$item = Get-Item $filePath
-	if ($item.PSIsContainer) { continue }
-	if ($item.FullName -in $processed) { continue }
-	$text += [System.IO.File]::ReadAllText($item.FullName)
-	$processed += $item.FullName
+foreach ($filePath in (& "$($PSScriptRoot)\..\WinEventLogCustomization\internal\scripts\postimport.ps1")) {
+    if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
+
+    $item = Get-Item $filePath
+    if ($item.PSIsContainer) { continue }
+    if ($item.FullName -in $processed) { continue }
+    $text += [System.IO.File]::ReadAllText($item.FullName)
+    $processed += $item.FullName
 }
 #endregion Gather text data to compile
 
@@ -83,38 +78,32 @@ $fileData = $fileData.Replace('"<compile code into here>"', ($text -join "`n`n")
 #endregion Update the psm1 file
 
 #region Updating the Module Version
-if ($AutoVersion)
-{
-	Write-PSFMessage -Level Important -Message "Updating module version numbers."
-	try { [version]$remoteVersion = (Find-Module 'WinEventLogCustomization' -Repository $Repository -ErrorAction Stop).Version }
-	catch
-	{
-		Stop-PSFFunction -Message "Failed to access $($Repository)" -EnableException $true -ErrorRecord $_
-	}
-	if (-not $remoteVersion)
-	{
-		Stop-PSFFunction -Message "Couldn't find WinEventLogCustomization on repository $($Repository)" -EnableException $true
-	}
-	$newBuildNumber = $remoteVersion.Build + 1
-	[version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\WinEventLogCustomization\WinEventLogCustomization.psd1").ModuleVersion
-	Update-ModuleManifest -Path "$($publishDir.FullName)\WinEventLogCustomization\WinEventLogCustomization.psd1" -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
+if ($AutoVersion) {
+    Write-PSFMessage -Level Important -Message "Updating module version numbers."
+    try { [version]$remoteVersion = (Find-Module 'WinEventLogCustomization' -Repository $Repository -ErrorAction Stop).Version }
+    catch {
+        Stop-PSFFunction -Message "Failed to access $($Repository)" -EnableException $true -ErrorRecord $_
+    }
+    if (-not $remoteVersion) {
+        Stop-PSFFunction -Message "Couldn't find WinEventLogCustomization on repository $($Repository)" -EnableException $true
+    }
+    $newBuildNumber = $remoteVersion.Build + 1
+    [version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\WinEventLogCustomization\WinEventLogCustomization.psd1").ModuleVersion
+    Update-ModuleManifest -Path "$($publishDir.FullName)\WinEventLogCustomization\WinEventLogCustomization.psd1" -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
 }
 #endregion Updating the Module Version
 
 #region Publish
 if ($SkipPublish) { return }
-if ($LocalRepo)
-{
-	# Dependencies must go first
-	Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: PSFramework"
-	New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
-	Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: WinEventLogCustomization"
-	New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\WinEventLogCustomization" -PackagePath .
-}
-else
-{
-	# Publish to Gallery
-	Write-PSFMessage -Level Important -Message "Publishing the WinEventLogCustomization module to $($Repository)"
-	Publish-Module -Path "$($publishDir.FullName)\WinEventLogCustomization" -NuGetApiKey $ApiKey -Force -Repository $Repository
+if ($LocalRepo) {
+    # Dependencies must go first
+    Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: PSFramework"
+    New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
+    Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: WinEventLogCustomization"
+    New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\WinEventLogCustomization" -PackagePath .
+} else {
+    # Publish to Gallery
+    Write-PSFMessage -Level Important -Message "Publishing the WinEventLogCustomization module to $($Repository)"
+    Publish-Module -Path "$($publishDir.FullName)\WinEventLogCustomization" -NuGetApiKey $ApiKey -Force -Repository $Repository
 }
 #endregion Publish

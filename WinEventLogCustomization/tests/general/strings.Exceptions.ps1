@@ -20,17 +20,17 @@ A list of entries that MAY be used without needing to have text defined.
 This is intended for modules (re-)using strings provided by another module
 #>
 $exceptions['NoTextNeeded'] = @(
-	'Validate.FSPath'
-	'Validate.FSPath.File'
-	'Validate.FSPath.FileOrParent'
-	'Validate.FSPath.Folder'
-	'Validate.Path'
-	'Validate.Path.Container'
-	'Validate.Path.Leaf'
-	'Validate.TimeSpan.Positive'
-	'Validate.Uri.Absolute'
-	'Validate.Uri.Absolute.File'
-	'Validate.Uri.Absolute.Https'
+    'Validate.FSPath'
+    'Validate.FSPath.File'
+    'Validate.FSPath.FileOrParent'
+    'Validate.FSPath.Folder'
+    'Validate.Path'
+    'Validate.Path.Container'
+    'Validate.Path.Leaf'
+    'Validate.TimeSpan.Positive'
+    'Validate.Uri.Absolute'
+    'Validate.Uri.Absolute.File'
+    'Validate.Uri.Absolute.Https'
 )
 
 $exceptions
