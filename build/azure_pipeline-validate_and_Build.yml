@@ -32,7 +32,7 @@ steps:
   inputs:
     targetType: filePath
     filePath: './build/vsts-build.ps1'
-    arguments: '-ModuleName $(system.teamProject) -ApiKey $(PSGalleryAPIKey) -AutoVersion'
+    arguments: '-ApiKey $(PSGalleryAPIKey) -AutoVersion'
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results **/TEST-*.xml'
