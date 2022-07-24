@@ -3,7 +3,7 @@
     RootModule           = 'WinEventLogCustomization.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.9.9'
+    ModuleVersion        = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID                 = '9268705a-75d5-401c-b13d-4d1a8f380b17'

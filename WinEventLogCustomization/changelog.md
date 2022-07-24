@@ -1,5 +1,5 @@
 ﻿# Changelog
-## 0.9.9 (2022-07-23)
+## 1.0.0 (2022-07-24)
 First official (pre-)release.
  - New: Introducing functions within the module
     - Get-WELCEventChannel
