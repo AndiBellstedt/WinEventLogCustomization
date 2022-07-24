@@ -55,7 +55,7 @@ Register-WELCEventChannelManifest -Path .\AndiBellstedt.man
 **Attention, executing this command will require admninistrative priviledges.** <br>
 Due to the fact, that changes on the Windows EventLog system are a administrative task. <br>
 <br>
-Following this result in the following EventChannel under "Application and Services Logs" withing the Event Viewer:<br>
+Following this, results in a new folder "AndiBellstedt" with two subfolders ("PowerShell" & "Tasks") and a EventLog "Operational" under "Application and Services Logs" withing the Event Viewer.<br>
 
 ![EventChannel][]
 <br>
