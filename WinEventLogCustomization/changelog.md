@@ -1,9 +1,11 @@
 ﻿# Changelog
-## 1.0.1 (2022-09-24)
+## 1.0.2 (2022-09-24)
  - New: ---
- - Upd: ---
+ - Upd:
+   - Unregister-WELCEventChannelManifest: Extend deregistration process with scanning registry for provider/ event source artifacts on channels from manifest that is going to unregister 
  - Fix:
-    - Set-WELCEventChannel: bugfix hashtable value mistake, that prevent you from using the function
+   - New-WELCEventChannelManifest: make WhatIf switch effective on command
+   - Set-WELCEventChannel: bugfix hashtable value mistake, that prevent you from using the function
 
 ## 1.0.0 (2022-07-24)
 First official release.

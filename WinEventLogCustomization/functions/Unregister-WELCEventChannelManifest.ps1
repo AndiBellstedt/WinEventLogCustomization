@@ -144,14 +144,15 @@
                     }
                 }
 
-                # Register manifest
+                # Unregister manifest
                 if ($pscmdlet.ShouldProcess("Manifest '$($Path)' from computer '$($computer)'", "Unregister")) {
 
                     $paramInvokeCmd = [ordered]@{
-                        "ComputerName" = $computer.ToString()
-                        "ErrorAction"  = "Stop"
-                        ErrorVariable  = "ErrorReturn"
-                        "ArgumentList" = $file
+                        "ComputerName"      = $computer.ToString()
+                        "ErrorAction"       = "Stop"
+                        ErrorVariable       = "errorReturn"
+                        InformationVariable = "infoReturn"
+                        "ArgumentList"      = $file
                     }
                     if ($PSCmdlet.ParameterSetName -eq "Session") { $paramInvokeCmd['ComputerName'] = $Session }
                     if ($Credential) { $paramInvokeCmd.Add("Credential", $Credential) }
@@ -164,10 +165,33 @@
                             $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wevtutil.exe' } *>&1
                             if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                         }
-                        if ($ErrorReturn) { Write-Error "Error registering manifest" -ErrorAction Stop }
+                        if ($errorReturn) { Write-Error "Error registering manifest" -ErrorAction Stop }
                     } catch {
                         Stop-PSFFunction -Message "Error unregistering manifest '$($file)' on computer '$($computer)'" -Target $computer -ErrorRecord $_
                     }
+                    Clear-Variable -Name errorReturn, infoReturn -Force -Confirm:$false -WhatIf:$false -Verbose:$false -Debug:$false -ErrorAction Ignore
+
+                    Write-PSFMessage -Level Verbose -Message "Clean up manifest artifacts from computer '$($computer)'" -Target $computer
+                    try {
+                        $loggingOutput = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock {
+                            [xml]$manifest = Get-Content $args[0]
+                            if ($manifest) {
+                                $channelnames = $manifest.instrumentationManifest.instrumentation.events.provider.channels.channel.name
+                            }
+                            foreach ($channelname in $channelnames) {
+                                $artifact = Get-Item "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\$($channelname)" -ErrorAction Ignore
+                                if ($artifact) {
+                                    $artifact | Remove-Item -Force -Recurse -ErrorAction Stop -Confirm:$false
+                                    "Removed artifact '$($channelname)' from registry"
+                                }
+                            }
+                        }
+                        if ($errorReturn) { Write-Error "Error on cleanup manifest artifacts from registry! $($errorReturn)" -ErrorAction Stop }
+                        if ($loggingOutput) { $loggingOutput | ForEach-Object { Write-PSFMessage -Level Verbose -Message $_ -Target $computer } }
+                    } catch {
+                        Stop-PSFFunction -Message "Error cleaning up manifest artifacts for on computer '$($computer)'" -Target $computer -ErrorRecord $_
+                    }
+                    Remove-Variable -Name errorReturn, infoReturn -Force -Confirm:$false -WhatIf:$false -Verbose:$false -Debug:$false -ErrorAction Ignore
                 }
             }
         }
