@@ -283,17 +283,27 @@
             "EventChannel" {
                 foreach ($eventChannelItem in $EventChannel) {
                     Write-PSFMessage -Level Debug -Message "Collecting config object for '$($eventChannelItem.ChannelFullName)' on '$($eventChannelItem.ComputerName)'"
+
+                    if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $_MaxEventLogSize = $MaxEventLogSize }else { $_MaxEventLogSize = $null }
+                    if (Test-PSFParameterBinding -ParameterName LogMode) { $_LogMode = $LogMode } else { $_LogMode = $null }
+                    if ($logFileFullName -like "ToBeCalculated") { $_LogFileFullName = "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $_LogFileFullName = $logFileFullName } else { $_LogFileFullName = $null }
+                    if (Test-PSFParameterBinding -ParameterName LogFilePath) { $_LogFilePath = $logFileFolder } else { $_LogFilePath = $null }
+                    if (Test-PSFParameterBinding -ParameterName Enabled) { $_Enabled = $Enabled } else { $_Enabled = $null }
+                    if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $_CompressLogFolder = $CompressLogFolder } else { $_CompressLogFolder = $null }
+                    if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $_AllowFileAccessForLocalService = $AllowFileAccessForLocalService } else { $_AllowFileAccessForLocalService = $null }
+                    if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $_EventChannelSDDL = $EventChannelSDDL } else { $_EventChannelSDDL = $null }
+
                     $null = $configList.Add(
                         [PSCustomObject]@{
                             EventChannel                   = $eventChannelItem
-                            Enabled                        = (.{ if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled } })
-                            MaxEventLogSize                = (.{ if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize } })
-                            LogMode                        = (.{ if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode } })
-                            LogFileFullName                = (.{ if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName } })
-                            LogFilePath                    = (.{ if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder } })
-                            CompressLogFolder              = (.{ if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder } })
-                            AllowFileAccessForLocalService = (.{ if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService } })
-                            EventChannelSDDL               = (.{ if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL } })
+                            Enabled                        = $_Enabled
+                            MaxEventLogSize                = $_MaxEventLogSize
+                            LogMode                        = $_LogMode
+                            LogFileFullName                = $_LogFileFullName
+                            LogFilePath                    = $_LogFilePath
+                            CompressLogFolder              = $_CompressLogFolder
+                            AllowFileAccessForLocalService = $_AllowFileAccessForLocalService
+                            EventChannelSDDL               = $_EventChannelSDDL
                         }
                     )
                 }
@@ -307,17 +317,27 @@
                         if ($eventChannel) {
                             foreach ($eventChannelItem in $eventChannel) {
                                 Write-PSFMessage -Level Debug -Message "Collecting config object for '$($eventChannelItem.Name)' on '$($computer)'"
+
+                                if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $_MaxEventLogSize = $MaxEventLogSize }else { $_MaxEventLogSize = $null }
+                                if (Test-PSFParameterBinding -ParameterName LogMode) { $_LogMode = $LogMode } else { $_LogMode = $null }
+                                if ($logFileFullName -like "ToBeCalculated") { $_LogFileFullName = "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $_LogFileFullName = $logFileFullName } else { $_LogFileFullName = $null }
+                                if (Test-PSFParameterBinding -ParameterName LogFilePath) { $_LogFilePath = $logFileFolder } else { $_LogFilePath = $null }
+                                if (Test-PSFParameterBinding -ParameterName Enabled) { $_Enabled = $Enabled } else { $_Enabled = $null }
+                                if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $_CompressLogFolder = $CompressLogFolder } else { $_CompressLogFolder = $null }
+                                if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $_AllowFileAccessForLocalService = $AllowFileAccessForLocalService } else { $_AllowFileAccessForLocalService = $null }
+                                if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $_EventChannelSDDL = $EventChannelSDDL } else { $_EventChannelSDDL = $null }
+
                                 $null = $configList.Add(
                                     [PSCustomObject]@{
                                         EventChannel                   = $eventChannelItem
-                                        Enabled                        = ( if (Test-PSFParameterBinding -ParameterName Enabled) { $Enabled } )
-                                        MaxEventLogSize                = ( if (Test-PSFParameterBinding -ParameterName MaxEventLogSize) { $MaxEventLogSize } )
-                                        LogMode                        = ( if (Test-PSFParameterBinding -ParameterName LogMode) { $LogMode } )
-                                        LogFileFullName                = ( if ($logFileFullName -like "ToBeCalculated") { "$($logFileFolder)\$($eventChannelItem.LogFile)" } elseif (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFullName } )
-                                        LogFilePath                    = ( if (Test-PSFParameterBinding -ParameterName LogFilePath) { $logFileFolder } )
-                                        CompressLogFolder              = ( if (Test-PSFParameterBinding -ParameterName CompressLogFolder) { $CompressLogFolder } )
-                                        AllowFileAccessForLocalService = ( if (Test-PSFParameterBinding -ParameterName AllowFileAccessForLocalService) { $AllowFileAccessForLocalService } )
-                                        EventChannelSDDL               = ( if (Test-PSFParameterBinding -ParameterName EventChannelSDDL) { $EventChannelSDDL } )
+                                        Enabled                        = $_Enabled
+                                        MaxEventLogSize                = $_MaxEventLogSize
+                                        LogMode                        = $_LogMode
+                                        LogFileFullName                = $_LogFileFullName
+                                        LogFilePath                    = $_LogFilePath
+                                        CompressLogFolder              = $_CompressLogFolder
+                                        AllowFileAccessForLocalService = $_AllowFileAccessForLocalService
+                                        EventChannelSDDL               = $_EventChannelSDDL
                                     }
                                 )
                             }
