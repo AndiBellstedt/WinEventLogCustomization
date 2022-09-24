@@ -238,7 +238,7 @@
         if (Test-Path -Path $TempPath -IsValid) {
             if (-not (Test-Path -Path $TempPath -PathType Container)) {
                 Write-PSFMessage -Level Debug -Message "Creating temporary directory '$($TempPath)'"
-                New-Item -Path $TempPath -ItemType Directory -Force | Out-Null
+                New-Item -Path $TempPath -ItemType Directory -Force -WhatIf:$false | Out-Null
                 $TempPath = Resolve-Path $TempPath -ErrorAction Stop | Select-Object -ExpandProperty Path
             }
         } else {
@@ -501,7 +501,8 @@
                 -ArgumentList $fullNameManifestTemp `
                 -WorkingDirectory $TempPath `
                 -NoNewWindow `
-                -Wait
+                -Wait `
+                -WhatIf:$false
 
             Write-PSFMessage -Level Debug -Message "Validating generated files"
             foreach ($tempFile in $tempFilesExpected) {
@@ -523,7 +524,8 @@
                 -ArgumentList "-css NameSpace $($fullNameManifestTemp)" `
                 -WorkingDirectory $TempPath `
                 -NoNewWindow `
-                -Wait
+                -Wait `
+                -WhatIf:$false
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).cs' file"
             foreach ($tempFile in $tempFilesExpected) {
@@ -545,7 +547,8 @@
                 -ArgumentList "$($fileName).rc" `
                 -WorkingDirectory $TempPath `
                 -Wait `
-                -WindowStyle Hidden
+                -WindowStyle Hidden `
+                -WhatIf:$false
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).res' file"
             foreach ($tempFile in $tempFilesExpected) {
@@ -565,7 +568,8 @@
                 -ArgumentList "/win32res:$($TempPath)\$($fileName).res /unsafe /target:library /out:$($TempPath)\$($fileName).dll $($TempPath)\$($fileName).cs" `
                 -WorkingDirectory $TempPath `
                 -Wait `
-                -WindowStyle Hidden
+                -WindowStyle Hidden `
+                -WhatIf:$false
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).dll' file"
             foreach ($FinalFile in $finalFilesExpected) {
@@ -590,7 +594,7 @@
 
         #region Cleanup
         Write-PSFMessage -Level Verbose -Message "Cleaning up temporary path '$($TempPath)'"
-        Remove-Item -Path $TempPath -Force -Recurse -ErrorAction SilentlyContinue
+        Remove-Item -Path $TempPath -Force -Recurse -ErrorAction SilentlyContinue -WhatIf:$false
         #endregion Cleanup
     }
 }
