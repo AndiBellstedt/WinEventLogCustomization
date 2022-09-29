@@ -496,13 +496,15 @@
             Write-PSFMessage -Level Debug -Message "Generate '$($fileName).h', '$($fileName).rc' and '$($fileName)TEMP.BIN' files from xml manifest"
             $tempFilesExpected = @("$($TempPath)\$($fileName).h", "$($TempPath)\$($fileName).rc", "$($TempPath)\$($fileName)TEMP.BIN")
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
-            Start-Process `
-                -FilePath "$($CompilationToolPath)\mc.exe" `
-                -ArgumentList $fullNameManifestTemp `
-                -WorkingDirectory $TempPath `
-                -NoNewWindow `
-                -Wait `
-                -WhatIf:$false
+            $paramExecute = @{
+                FilePath         = "$($CompilationToolPath)\mc.exe"
+                ArgumentList     = $fullNameManifestTemp
+                WorkingDirectory = $TempPath
+                NoNewWindow      = $true
+                Wait             = $true
+            }
+            if ($PSEdition -like "Core") { $paramExecute.Add("WhatIf", $false) }
+            Start-Process @paramExecute
 
             Write-PSFMessage -Level Debug -Message "Validating generated files"
             foreach ($tempFile in $tempFilesExpected) {
@@ -519,13 +521,15 @@
             Write-PSFMessage -Level Debug -Message "Generate '$($fileName).cs' file from xml manifest"
             $tempFilesExpected = @( "$($TempPath)\$($fileName).cs" )
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
-            Start-Process `
-                -FilePath "$($CompilationToolPath)\mc.exe" `
-                -ArgumentList "-css NameSpace $($fullNameManifestTemp)" `
-                -WorkingDirectory $TempPath `
-                -NoNewWindow `
-                -Wait `
-                -WhatIf:$false
+            $paramExecute = @{
+                FilePath         = "$($CompilationToolPath)\mc.exe"
+                ArgumentList     = "-css NameSpace $($fullNameManifestTemp)"
+                WorkingDirectory = $TempPath
+                NoNewWindow      = $true
+                Wait             = $true
+            }
+            if ($PSEdition -like "Core") { $paramExecute.Add("WhatIf", $false) }
+            Start-Process @paramExecute
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).cs' file"
             foreach ($tempFile in $tempFilesExpected) {
@@ -542,13 +546,15 @@
             Write-PSFMessage -Level Debug -Message "Generate '$fileName).res' file from '$($fileName).rc' file"
             $tempFilesExpected = @("$($TempPath)\$($fileName).res")
             $tempFilesExpected | Get-ChildItem -ErrorAction SilentlyContinue | Remove-Item -Force -Confirm:$false
-            Start-Process `
-                -FilePath "$($CompilationToolPath)\rc.exe" `
-                -ArgumentList "$($fileName).rc" `
-                -WorkingDirectory $TempPath `
-                -Wait `
-                -WindowStyle Hidden `
-                -WhatIf:$false
+            $paramExecute = @{
+                FilePath         = "$($CompilationToolPath)\rc.exe"
+                ArgumentList     = "$($fileName).rc"
+                WorkingDirectory = $TempPath
+                Wait             = $true
+                WindowStyle      = "Hidden"
+            }
+            if ($PSEdition -like "Core") { $paramExecute.Add("WhatIf", $false) }
+            Start-Process @paramExecute
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).res' file"
             foreach ($tempFile in $tempFilesExpected) {
@@ -563,13 +569,15 @@
 
             #region final compilation of the dll file
             Write-PSFMessage -Level Debug -Message "Finally compiling '$fileName).dll' file from generated meta files"
-            Start-Process `
-                -FilePath "$($WindowsCSCPath)\csc.exe" `
-                -ArgumentList "/win32res:$($TempPath)\$($fileName).res /unsafe /target:library /out:$($TempPath)\$($fileName).dll $($TempPath)\$($fileName).cs" `
-                -WorkingDirectory $TempPath `
-                -Wait `
-                -WindowStyle Hidden `
-                -WhatIf:$false
+            $paramExecute = @{
+                FilePath         = "$($WindowsCSCPath)\csc.exe"
+                ArgumentList     = "/win32res:$($TempPath)\$($fileName).res /unsafe /target:library /out:$($TempPath)\$($fileName).dll $($TempPath)\$($fileName).cs"
+                WorkingDirectory = $TempPath
+                Wait             = $true
+                WindowStyle      = "Hidden"
+            }
+            if ($PSEdition -like "Core") { $paramExecute.Add("WhatIf", $false) }
+            Start-Process @paramExecute
 
             Write-PSFMessage -Level Debug -Message "Validating generated '$($fileName).dll' file"
             foreach ($FinalFile in $finalFilesExpected) {
