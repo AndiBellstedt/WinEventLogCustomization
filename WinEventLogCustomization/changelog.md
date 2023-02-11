@@ -1,4 +1,10 @@
 ﻿# Changelog
+## 1.0.2.2 (2023-02-11)
+- New: ---
+- Upd: ---
+- Fix:
+    - (Un)Register-WELCEventChannelManifest: Fix minor bug with (un)registering on remote systems and console output encoding.
+
 ## 1.0.2.1 (2022-09-29)
 - New: ---
 - Upd: ---

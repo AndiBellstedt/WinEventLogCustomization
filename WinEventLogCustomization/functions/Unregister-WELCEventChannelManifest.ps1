@@ -160,7 +160,7 @@
                     Write-PSFMessage -Level Verbose -Message "Unregistering manifest '$($file)' from computer '$($computer)'" -Target $computer
                     try {
                         $null = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock {
-                            try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
+                            #try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                             $output = . "$($env:windir)\system32\wevtutil.exe" "uninstall-manifest" "$($args[0])" *>&1
                             $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wevtutil.exe' } *>&1
                             if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
