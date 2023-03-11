@@ -1,4 +1,11 @@
 ﻿# Changelog
+## 1.0.3.0 (2023-03-11)
+- New: ---
+- Upd: ---
+- Fix:
+    - Register-WELCEventChannelManifest: Fix bug with session handling for registering manifests on remote systems
+    - General: Fix integer overflow on WELC.ChannelConfig objects to allow Excel import of eventlog channel configurations with size attribute larger than 1 GB
+
 ## 1.0.2.2 (2023-02-11)
 - New: ---
 - Upd: ---
