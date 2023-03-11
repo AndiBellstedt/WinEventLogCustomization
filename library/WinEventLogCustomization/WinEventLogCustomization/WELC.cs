@@ -53,7 +53,7 @@ namespace WELC {
         /// <summary>
         /// 
         /// </summary>
-        public System.Int32 MaxEventLogSize;
+        public System.Int64 MaxEventLogSize;
     }
 
 
