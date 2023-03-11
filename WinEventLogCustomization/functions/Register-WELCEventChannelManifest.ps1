@@ -256,13 +256,18 @@
                             }
 
                             # Transfer files
-                            Copy-Item -ToSession $Session -Destination $DestinationPath -Force -Path $file
-                            Copy-Item -ToSession $Session -Destination $DestinationPath -Force -Path $dllFiles
+                            foreach ($sessionItem in $Session) {
+                                Copy-Item -ToSession $sessionItem -Destination $DestinationPath -Force -Path $file
+                                Copy-Item -ToSession $sessionItem -Destination $DestinationPath -Force -Path $dllFiles
+                            }
                         }
                     } elseif ((split-path $file) -notlike $DestinationPath) {
                         Write-PSFMessage -Level Verbose -Message "Going to copy file into destination '$($DestinationPath)'"
-                        Copy-Item -Destination $DestinationPath -Force -Path $file
-                        Copy-Item -Destination $DestinationPath -Force -Path $dllFiles
+
+                        if ($pscmdlet.ShouldProcess("Manifest '$($file)' and dll to path '$($DestinationPath)'", "Copy")) {
+                            Copy-Item -Destination $DestinationPath -Force -Path $file
+                            Copy-Item -Destination $DestinationPath -Force -Path $dllFiles
+                        }
                     }
 
                     # Register manifest
